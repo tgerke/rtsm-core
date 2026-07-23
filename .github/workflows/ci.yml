@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rtsm
+          POSTGRES_PASSWORD: rtsm-dev-only
+          POSTGRES_DB: rtsm
+        ports:
+          - 5435:5432
+        options: >-
+          --health-cmd "pg_isready -U rtsm -d rtsm"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # The suite derives a dedicated rtsm_test database from this URL and
+      # creates + migrates it in the setup step (apps/api/vitest.config.ts),
+      # so nothing writes to the `rtsm` database above. Compliance tests connect
+      # as rtsm_app too; migrating rtsm_test creates the role and its grants.
+      DATABASE_URL: postgres://rtsm:rtsm-dev-only@localhost:5435/rtsm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        # version is taken from packageManager in package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build web
+        run: pnpm --filter @rtsm-core/web build
