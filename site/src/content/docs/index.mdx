@@ -1,0 +1,40 @@
+---
+title: Open-source RTSM for clinical trials
+description: Randomization list management and blinded assignment delivery, in a separate application so no EDC role, administrator, or DBA can reach the master list.
+template: splash
+tableOfContents: false
+hero:
+  title: An RTSM where the blinding boundary is architectural
+  tagline: >-
+    The master randomization list is the most blinding-sensitive data in a
+    trial. rtsm-core keeps it in its own application with its own database, so
+    inside the EDC there is nothing to reach, and delivers each assignment
+    through the same public intake a commercial RTSM would use. Blinding,
+    audit, and allocation constraints are enforced in the database itself.
+  actions:
+    - text: Get started
+      link: /rtsm-core/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: GitHub
+      link: https://github.com/tgerke/rtsm-core
+      icon: github
+      variant: minimal
+---
+
+## What it does today
+
+v0.1 covers randomization: import a statistician-generated list, activate it
+behind a password step-up with a recorded reason, randomize subjects with
+concurrency-safe stratified allocation, and deliver each assignment to
+[edc-core](https://github.com/tgerke/edc-core)'s RTSM intake with an
+append-only transfer log on both sides. Kit, depot, and resupply management
+is on the roadmap.
+
+## The sibling family
+
+rtsm-core is the fourth application in the clinical-stack family, next to
+edc-core (EDC), ctms-core (CTMS), and lims-core (LIMS). The siblings share a
+stack, an OIDC provider, and a compliance pattern: append-only regulated
+tables, a hash-chained audit trail written by the database, and a DML-only
+runtime role.
