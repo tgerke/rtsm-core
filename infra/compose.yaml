@@ -1,0 +1,21 @@
+name: rtsm-core
+
+services:
+  postgres:
+    image: docker.io/library/postgres:16
+    environment:
+      POSTGRES_USER: rtsm
+      POSTGRES_PASSWORD: rtsm-dev-only # local development only; never deploy with this
+      POSTGRES_DB: rtsm
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtsm -d rtsm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
