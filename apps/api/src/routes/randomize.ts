@@ -1,11 +1,17 @@
 import { deliverAssignment, randomizeSubject, withActor } from "@rtsm-core/core";
-import { assignments, deliveryEvents } from "@rtsm-core/db";
+import { assignments, deliveryEvents, sites } from "@rtsm-core/db";
 import { randomizeRequestSchema } from "@rtsm-core/schemas";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import { requirePermission } from "../auth/plugin.js";
 import type { AuthenticatedUser } from "../auth/service.js";
-import { loadStudy, replyDomainError, requireMembership, studyIdOf } from "./helpers.js";
+import {
+  loadStudy,
+  replyDomainError,
+  requireMembership,
+  siteIdOfBody,
+  studyIdOf,
+} from "./helpers.js";
 
 export const randomizeRoutes: FastifyPluginAsync = async (app) => {
   /**
@@ -17,7 +23,14 @@ export const randomizeRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post(
     "/studies/:studyId/subjects/:subjectKey/randomize",
-    { preHandler: requirePermission("subject.randomize", (r) => ({ studyId: studyIdOf(r) })) },
+    {
+      // The scope carries the requested site: a site-scoped coordinator can
+      // randomize only there, and never without naming their site.
+      preHandler: requirePermission("subject.randomize", (r) => ({
+        studyId: studyIdOf(r),
+        ...siteIdOfBody(r),
+      })),
+    },
     async (request, reply) => {
       const parsed = randomizeRequestSchema.safeParse(request.body ?? {});
       if (!parsed.success) return reply.code(400).send({ error: parsed.error.message });
@@ -33,6 +46,7 @@ export const randomizeRoutes: FastifyPluginAsync = async (app) => {
             subjectKey,
             ...(parsed.data.stratum !== undefined ? { stratum: parsed.data.stratum } : {}),
             ...(parsed.data.strata !== undefined ? { strata: parsed.data.strata } : {}),
+            ...(parsed.data.siteId !== undefined ? { siteId: parsed.data.siteId } : {}),
             createdBy: user.id,
           }),
         );
@@ -59,9 +73,11 @@ export const randomizeRoutes: FastifyPluginAsync = async (app) => {
         id: assignments.id,
         subjectKey: assignments.subjectKey,
         randomizationId: assignments.randomizationId,
+        siteCode: sites.code,
         createdAt: assignments.createdAt,
       })
       .from(assignments)
+      .leftJoin(sites, eq(sites.id, assignments.siteId))
       .where(eq(assignments.studyId, studyIdOf(request)))
       .orderBy(desc(assignments.createdAt));
     const withDelivery = [];

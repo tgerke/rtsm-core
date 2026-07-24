@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth.js";
+import { sites } from "./sites.js";
 import { studies } from "./studies.js";
 
 export const randomizationLists = pgTable(
@@ -68,6 +69,8 @@ export const assignments = pgTable(
       .references(() => randomizationEntries.id),
     subjectKey: text("subject_key").notNull(),
     randomizationId: uuid("randomization_id").notNull().unique().defaultRandom(),
+    // Randomizing site when the request named one (0004).
+    siteId: uuid("site_id").references(() => sites.id),
     strata: jsonb("strata"),
     createdBy: uuid("created_by")
       .notNull()

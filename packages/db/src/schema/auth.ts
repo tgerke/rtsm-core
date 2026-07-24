@@ -1,4 +1,5 @@
 import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sites } from "./sites.js";
 import { studies } from "./studies.js";
 
 export const users = pgTable("app_user", {
@@ -65,6 +66,8 @@ export const userStudyRoles = pgTable(
     roleId: uuid("role_id")
       .notNull()
       .references(() => roles.id),
+    // NULL = study-wide grant; set = site-bound actions only at this site.
+    siteId: uuid("site_id").references(() => sites.id),
     grantedBy: uuid("granted_by")
       .notNull()
       .references(() => users.id),

@@ -1,10 +1,11 @@
 import { activateList, importList, withActor } from "@rtsm-core/core";
-import { createDb, databaseUrl, roles, studies, userStudyRoles, users } from "@rtsm-core/db";
+import { createDb, databaseUrl, roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../auth/password.js";
 
 // Demo fixtures for local development: three users (one per role split), a
-// study pointed at a local edc-core, and an activated 12-entry list.
+// study pointed at a local edc-core, two sites, and an activated 12-entry
+// list.
 // Idempotent-ish: skips everything if the demo admin already exists.
 //
 // EDC wiring comes from env so the demo can point at a real local edc-core:
@@ -63,6 +64,11 @@ try {
       return user.id;
     };
 
+    await tx.insert(sites).values([
+      { studyId: study.id, code: "SITE-001", name: "Memorial North" },
+      { studyId: study.id, code: "SITE-002", name: "Riverside Clinic" },
+    ]);
+
     await tx.insert(userStudyRoles).values([
       {
         userId: userId("admin"),
@@ -103,7 +109,7 @@ try {
     }),
   );
 
-  console.log(`seeded demo study ${seeded.study.id} with an active 12-entry list`);
+  console.log(`seeded demo study ${seeded.study.id} with two sites and an active 12-entry list`);
   console.log(`users (password "${DEMO_PASSWORD}"): admin, listmgr (unblinded), coord`);
 } finally {
   await client.end();

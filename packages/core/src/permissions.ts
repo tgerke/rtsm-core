@@ -1,4 +1,5 @@
-// Must stay in sync with the role seed in packages/db/migrations/0003_seed_roles.sql.
+// Must stay in sync with the role seeds in packages/db/migrations
+// (0003_seed_roles.sql and later role_permission inserts).
 export const PERMISSIONS = [
   "study.manage",
   "roles.grant",
@@ -7,6 +8,7 @@ export const PERMISSIONS = [
   "list.read_unblinded",
   "subject.randomize",
   "delivery.manage",
+  "site.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

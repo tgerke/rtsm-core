@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@rtsm-core/web", "dev"],
       "port": 5175
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@rtsm-core/api", "dev"],
+      "port": 3002
     }
   ]
 }

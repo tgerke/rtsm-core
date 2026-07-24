@@ -1,4 +1,4 @@
-import { assignments, randomizationLists } from "@rtsm-core/db";
+import { assignments, randomizationLists, sites } from "@rtsm-core/db";
 import { and, eq, sql } from "drizzle-orm";
 import type { Tx } from "./actor.js";
 import { DomainError } from "./errors.js";
@@ -21,10 +21,21 @@ export async function randomizeSubject(
     subjectKey: string;
     stratum?: string;
     strata?: Record<string, string>;
+    siteId?: string;
     createdBy: string;
   },
 ) {
   const stratum = input.stratum ?? "";
+
+  if (input.siteId) {
+    const [site] = await tx
+      .select({ status: sites.status })
+      .from(sites)
+      .where(and(eq(sites.id, input.siteId), eq(sites.studyId, input.studyId)))
+      .limit(1);
+    if (!site) throw new DomainError("site not found in this study", 404);
+    if (site.status !== "active") throw new DomainError("site is closed", 409);
+  }
 
   const [active] = await tx
     .select()
@@ -68,6 +79,7 @@ export async function randomizeSubject(
       studyId: input.studyId,
       entryId,
       subjectKey: input.subjectKey,
+      siteId: input.siteId ?? null,
       strata: input.strata ?? (stratum ? { stratum } : null),
       createdBy: input.createdBy,
     })

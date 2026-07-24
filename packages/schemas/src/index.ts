@@ -34,6 +34,22 @@ export const studyUpdateSchema = studyCreateSchema.partial().extend({
 export type StudyUpdateRequest = z.infer<typeof studyUpdateSchema>;
 
 // ---------------------------------------------------------------------------
+// Sites
+// ---------------------------------------------------------------------------
+
+export const siteCreateSchema = z.object({
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(200),
+});
+export type SiteCreateRequest = z.infer<typeof siteCreateSchema>;
+
+export const siteUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  status: z.enum(["active", "closed"]).optional(),
+});
+export type SiteUpdateRequest = z.infer<typeof siteUpdateSchema>;
+
+// ---------------------------------------------------------------------------
 // Randomization lists (ADR-0001)
 // ---------------------------------------------------------------------------
 
@@ -60,6 +76,8 @@ export const randomizeRequestSchema = z.object({
   stratum: z.string().max(200).optional(),
   // Optional descriptive covariates forwarded opaquely to the EDC intake.
   strata: z.record(z.string(), z.string()).optional(),
+  // Randomizing site; required by site-scoped grants, optional otherwise.
+  siteId: z.uuid().optional(),
 });
 export type RandomizeRequest = z.infer<typeof randomizeRequestSchema>;
 

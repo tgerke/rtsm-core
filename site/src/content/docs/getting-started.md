@@ -13,7 +13,7 @@ Node 22+, pnpm 11, and Podman (or Docker) for Postgres 16.
 podman compose -f infra/compose.yaml up -d postgres   # Postgres 16 on :5435
 pnpm install
 pnpm --filter @rtsm-core/db db:migrate
-pnpm --filter @rtsm-core/api db:seed-demo             # demo users + study + active list
+pnpm --filter @rtsm-core/api db:seed-demo             # demo users + study + sites + active list
 pnpm dev                                              # api :3002, web :5175
 ```
 
@@ -24,6 +24,16 @@ Sign in at `http://localhost:5175` with one of the demo accounts (password
 - `listmgr` — unblinded list manager; imports and activates lists, sees arms.
 - `admin` — system administrator; creates studies and grants roles, sees no
   arms (administration does not unblind).
+
+## Sites
+
+The demo study has two sites (`SITE-001`, `SITE-002`). Admins manage sites
+from the study page; closing a site stops new randomizations there.
+
+Randomizing can name a site, and the assignment records it. Role grants can
+be scoped to a site: grant a role with a `siteId` and the holder can perform
+site-bound actions (like randomizing) only at that site — and must name it
+in the request. Study-wide grants (no `siteId`) behave exactly as before.
 
 ## Point it at a real edc-core
 

@@ -25,6 +25,7 @@ const STATUS_STYLES: Record<string, string> = {
   conflict: "bg-orange-100 text-orange-800",
   rejected: "bg-rose-100 text-rose-800",
   error: "bg-rose-100 text-rose-800",
+  closed: "bg-slate-200 text-slate-500",
 };
 
 export function StatusBadge({ status }: { status: string }) {

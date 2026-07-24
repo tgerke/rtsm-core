@@ -1,5 +1,5 @@
 import { withActor } from "@rtsm-core/core";
-import { roles, studies, userStudyRoles, users } from "@rtsm-core/db";
+import { roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
 import { studyCreateSchema, studyUpdateSchema } from "@rtsm-core/schemas";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
@@ -103,7 +103,7 @@ export const studyRoutes: FastifyPluginAsync = async (app) => {
       }),
     },
     async (request, reply) => {
-      const body = request.body as { username?: string; role?: string };
+      const body = request.body as { username?: string; role?: string; siteId?: string };
       if (!body?.username || !body?.role) {
         return reply.code(400).send({ error: "username and role are required" });
       }
@@ -112,15 +112,28 @@ export const studyRoutes: FastifyPluginAsync = async (app) => {
       if (!target) return reply.code(404).send({ error: "user not found" });
       const [role] = await db.select().from(roles).where(eq(roles.name, body.role));
       if (!role) return reply.code(404).send({ error: "role not found" });
+      let siteCode: string | null = null;
+      if (body.siteId) {
+        const [site] = await db
+          .select({ code: sites.code })
+          .from(sites)
+          .where(and(eq(sites.id, body.siteId), eq(sites.studyId, studyIdOf(request))))
+          .limit(1);
+        if (!site) return reply.code(404).send({ error: "site not found in this study" });
+        siteCode = site.code;
+      }
       const user = request.user as AuthenticatedUser;
       const grant = await grantRole(db, {
         userId: target.id,
         studyId: studyIdOf(request),
         roleId: role.id,
+        ...(body.siteId ? { siteId: body.siteId } : {}),
         grantedBy: user.id,
         grantedByLabel: user.username,
       });
-      return reply.code(201).send({ id: grant.id, username: target.username, role: role.name });
+      return reply
+        .code(201)
+        .send({ id: grant.id, username: target.username, role: role.name, siteCode });
     },
   );
 

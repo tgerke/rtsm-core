@@ -6,6 +6,7 @@ import {
   type DeliveryRow,
   type RandomizationList,
   type RandomizeResult,
+  type Site,
 } from "../api.js";
 import { useStudy } from "../app.js";
 import {
@@ -34,7 +35,130 @@ export function StudyPage() {
       {permissions.includes("subject.randomize") && <RandomizeCard />}
       <AssignmentsCard />
       <DeliveriesCard />
+      <SitesCard />
     </>
+  );
+}
+
+function useSites() {
+  const { study } = useStudy();
+  return useQuery({
+    queryKey: ["sites", study.id],
+    queryFn: () => api<Site[]>(`/studies/${study.id}/sites`),
+  });
+}
+
+function SitesCard() {
+  const { study, me, permissions } = useStudy();
+  const queryClient = useQueryClient();
+  const sites = useSites();
+  const [showCreate, setShowCreate] = useState(false);
+  const canManage = permissions.includes("site.manage") || me.isSystemAdmin;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["sites", study.id] });
+
+  const close = useMutation({
+    mutationFn: (siteId: string) =>
+      api(`/studies/${study.id}/sites/${siteId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "closed" }),
+      }),
+    onSuccess: refresh,
+  });
+
+  return (
+    <Card
+      title="Sites"
+      actions={
+        canManage ? <Button onClick={() => setShowCreate(true)}>Add site</Button> : undefined
+      }
+    >
+      {sites.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Code</th>
+              <th className="pb-2">Name</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {sites.data.map((site) => (
+              <tr key={site.id}>
+                <td className="py-2 font-mono text-xs">{site.code}</td>
+                <td className="py-2">{site.name}</td>
+                <td className="py-2">
+                  <StatusBadge status={site.status} />
+                </td>
+                <td className="py-2 text-right">
+                  {canManage && site.status === "active" && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => close.mutate(site.id)}
+                      disabled={close.isPending}
+                    >
+                      Close
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No sites yet.{" "}
+          {canManage
+            ? "Add the investigational sites to enable site-level randomization and, next, kit inventory."
+            : "An administrator sets up the study's sites."}
+        </p>
+      )}
+      <ErrorNote message={close.error ? close.error.message : null} />
+      {showCreate && (
+        <CreateSiteModal
+          onClose={() => {
+            setShowCreate(false);
+            refresh();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CreateSiteModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const create = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/sites`, {
+        method: "POST",
+        body: JSON.stringify({ code, name }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Modal title="Add site" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Code" hint="Short site identifier, unique in this study (e.g. SITE-001).">
+          <input className={inputClass} value={code} onChange={(e) => setCode(e.target.value)} />
+        </Field>
+        <Field label="Name">
+          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <ErrorNote message={create.error ? create.error.message : null} />
+        <Button type="submit" disabled={create.isPending || !code || !name}>
+          {create.isPending ? "Adding…" : "Add site"}
+        </Button>
+      </form>
+    </Modal>
   );
 }
 
@@ -234,9 +358,12 @@ function ActivateModal({ list, onClose }: { list: RandomizationList; onClose: ()
 function RandomizeCard() {
   const { study } = useStudy();
   const queryClient = useQueryClient();
+  const sites = useSites();
   const [subjectKey, setSubjectKey] = useState("");
   const [stratum, setStratum] = useState("");
+  const [siteId, setSiteId] = useState("");
   const [result, setResult] = useState<RandomizeResult | null>(null);
+  const activeSites = (sites.data ?? []).filter((s) => s.status === "active");
 
   const randomize = useMutation({
     mutationFn: () =>
@@ -244,7 +371,10 @@ function RandomizeCard() {
         `/studies/${study.id}/subjects/${encodeURIComponent(subjectKey)}/randomize`,
         {
           method: "POST",
-          body: JSON.stringify(stratum ? { stratum } : {}),
+          body: JSON.stringify({
+            ...(stratum ? { stratum } : {}),
+            ...(siteId ? { siteId } : {}),
+          }),
         },
       ),
     onSuccess: (data) => {
@@ -282,6 +412,24 @@ function RandomizeCard() {
             />
           </Field>
         </div>
+        {activeSites.length > 0 && (
+          <div className="grow">
+            <Field label="Site" hint="Required if your access is site-scoped.">
+              <select
+                className={inputClass}
+                value={siteId}
+                onChange={(e) => setSiteId(e.target.value)}
+              >
+                <option value="">—</option>
+                {activeSites.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.code} — {s.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        )}
         <Button type="submit" disabled={randomize.isPending || !subjectKey}>
           {randomize.isPending ? "Randomizing…" : "Randomize"}
         </Button>
@@ -314,6 +462,7 @@ function AssignmentsCard() {
           <thead className="text-xs text-slate-500 uppercase">
             <tr>
               <th className="pb-2">Subject</th>
+              <th className="pb-2">Site</th>
               <th className="pb-2">Randomization ID</th>
               <th className="pb-2">Randomized</th>
               <th className="pb-2">Last delivery</th>
@@ -323,6 +472,7 @@ function AssignmentsCard() {
             {assignments.data.map((row) => (
               <tr key={row.id}>
                 <td className="py-2">{row.subjectKey}</td>
+                <td className="py-2 font-mono text-xs">{row.siteCode ?? "—"}</td>
                 <td className="py-2 font-mono text-xs">{row.randomizationId}</td>
                 <td className="py-2 text-slate-500">{formatDateTime(row.createdAt)}</td>
                 <td className="py-2">

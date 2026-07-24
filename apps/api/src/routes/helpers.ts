@@ -8,6 +8,18 @@ export function studyIdOf(request: FastifyRequest): string {
   return (request.params as { studyId: string }).studyId;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * siteId from a not-yet-validated request body, for permission scopes that
+ * run before schema validation. Non-UUID values are dropped here (the guard
+ * then applies the study-wide rule) and rejected later by the body schema.
+ */
+export function siteIdOfBody(request: FastifyRequest): { siteId: string } | Record<never, never> {
+  const siteId = (request.body as { siteId?: unknown } | null)?.siteId;
+  return typeof siteId === "string" && UUID_RE.test(siteId) ? { siteId } : {};
+}
+
 export async function loadStudy(db: Db, studyId: string) {
   const [study] = await db.select().from(studies).where(eq(studies.id, studyId)).limit(1);
   if (!study) throw new DomainError("study not found", 404);

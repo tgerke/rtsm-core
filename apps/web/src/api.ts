@@ -55,10 +55,19 @@ export interface RandomizationList {
   activationReason: string | null;
 }
 
+export interface Site {
+  id: string;
+  code: string;
+  name: string;
+  status: "active" | "closed";
+  createdAt: string;
+}
+
 export interface AssignmentRow {
   id: string;
   subjectKey: string;
   randomizationId: string;
+  siteCode: string | null;
   createdAt: string;
   lastDelivery: { outcome: string; createdAt: string } | null;
 }

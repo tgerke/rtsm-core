@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { importList, withActor } from "@rtsm-core/core";
-import { type Db, roles, studies, userStudyRoles, users } from "@rtsm-core/db";
+import { type Db, roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { hashPassword } from "./auth/password.js";
@@ -60,11 +60,30 @@ export async function grantTestRole(
   studyId: string,
   roleName: string,
   grantedBy: string,
+  opts: { siteId?: string } = {},
 ) {
   const [role] = await db.select().from(roles).where(eq(roles.name, roleName)).limit(1);
   if (!role) throw new Error(`role ${roleName} not seeded`);
   await withActor(db, { label: "test-setup" }, async (tx) => {
-    await tx.insert(userStudyRoles).values({ userId, studyId, roleId: role.id, grantedBy });
+    await tx.insert(userStudyRoles).values({
+      userId,
+      studyId,
+      roleId: role.id,
+      siteId: opts.siteId ?? null,
+      grantedBy,
+    });
+  });
+}
+
+export async function createTestSite(db: Db, studyId: string, opts: { name?: string } = {}) {
+  const suffix = uniqueSuffix();
+  return withActor(db, { label: "test-setup" }, async (tx) => {
+    const [site] = await tx
+      .insert(sites)
+      .values({ studyId, code: `SITE-${suffix}`, name: opts.name ?? `Test Site ${suffix}` })
+      .returning();
+    if (!site) throw new Error("test site insert failed");
+    return site;
   });
 }
 
