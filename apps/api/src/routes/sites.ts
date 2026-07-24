@@ -5,15 +5,13 @@ import { and, asc, eq } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import { requirePermission } from "../auth/plugin.js";
 import type { AuthenticatedUser } from "../auth/service.js";
-import { loadStudy, replyDomainError, requireMembership, studyIdOf } from "./helpers.js";
-
-/** Postgres 23505, possibly wrapped by the driver/ORM in `cause`. */
-function isUniqueViolation(err: unknown): boolean {
-  for (let e = err; typeof e === "object" && e !== null; e = (e as Error).cause) {
-    if ((e as { code?: string }).code === "23505") return true;
-  }
-  return false;
-}
+import {
+  isUniqueViolation,
+  loadStudy,
+  replyDomainError,
+  requireMembership,
+  studyIdOf,
+} from "./helpers.js";
 
 export const siteRoutes: FastifyPluginAsync = async (app) => {
   // Site setup is study administration; allowSystemAdmin mirrors study.manage

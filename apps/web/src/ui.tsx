@@ -26,6 +26,10 @@ const STATUS_STYLES: Record<string, string> = {
   rejected: "bg-rose-100 text-rose-800",
   error: "bg-rose-100 text-rose-800",
   closed: "bg-slate-200 text-slate-500",
+  available: "bg-emerald-100 text-emerald-800",
+  dispensed: "bg-sky-100 text-sky-800",
+  damaged: "bg-rose-100 text-rose-800",
+  quarantined: "bg-orange-100 text-orange-800",
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -77,7 +81,7 @@ export const inputClass =
 export function Modal(props: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-xl">
         <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">{props.title}</h3>
           <button

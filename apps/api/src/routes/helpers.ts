@@ -47,6 +47,14 @@ export function requireMembership() {
   };
 }
 
+/** Postgres 23505, possibly wrapped by the driver/ORM in `cause`. */
+export function isUniqueViolation(err: unknown): boolean {
+  for (let e = err; typeof e === "object" && e !== null; e = (e as Error).cause) {
+    if ((e as { code?: string }).code === "23505") return true;
+  }
+  return false;
+}
+
 export async function replyDomainError(reply: FastifyReply, err: unknown): Promise<boolean> {
   if (err instanceof DomainError) {
     await reply.code(err.statusCode).send({ error: err.message });

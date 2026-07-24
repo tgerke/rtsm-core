@@ -24,6 +24,8 @@ Sign in at `http://localhost:5175` with one of the demo accounts (password
 - `listmgr` — unblinded list manager; imports and activates lists, sees arms.
 - `admin` — system administrator; creates studies and grants roles, sees no
   arms (administration does not unblind).
+- `pharma` — unblinded pharmacist; maintains the kit-to-arm map and site
+  inventory, sees kit types and arms.
 
 ## Sites
 
@@ -34,6 +36,14 @@ Randomizing can name a site, and the assignment records it. Role grants can
 be scoped to a site: grant a role with a `siteId` and the holder can perform
 site-bound actions (like randomizing) only at that site — and must name it
 in the request. Study-wide grants (no `siteId`) behave exactly as before.
+
+## Kits
+
+The demo seeds two kit types (`KT-A`, `KT-B`) and a small inventory at each
+site. Sign in as `pharma` to see the kit-to-arm map and the unblinded
+inventory; as `coord`, the same inventory shows kit numbers and status but
+no kit types. See [Kits and inventory](/rtsm-core/kits-and-dispensing/) for the
+shipment CSV format and lifecycle.
 
 ## Point it at a real edc-core
 

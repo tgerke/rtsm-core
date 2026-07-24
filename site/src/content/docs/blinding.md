@@ -21,12 +21,17 @@ never echo it.
 Within this system the list must exist, so the controls are explicit
 (ADR-0003):
 
-- One permission, `list.read_unblinded`, gates every arm. Only the
-  `list_manager` role (the unblinded statistician) holds it. Administrators,
-  coordinators, and monitors are blinded: administration does not unblind.
+- Arms sit behind two permissions. `list.read_unblinded` gates the master
+  list and transfer payloads; only the `list_manager` role (the unblinded
+  statistician) holds it. `kit.read_unblinded` gates the kit-to-arm map and
+  the unblinded inventory view; only the `pharmacist` role holds it.
+  Administrators, coordinators, and monitors are blinded: administration
+  does not unblind.
 - Blinded views lack arms structurally, not cosmetically: the randomize
   response and assignment listings never select an arm; the transfer log
-  masks `arm` and `strata` in stored payloads.
+  masks `arm` and `strata` in stored payloads; the blinded kit inventory
+  carries no kit-type identifier at all, because with one type per arm even
+  the code would leak.
 - Every unblinded read writes an append-only `unblinded_access` row — who,
   which study, what context, when — chained into the audit trail.
   Demonstrating the blind held includes showing who looked.

@@ -50,6 +50,35 @@ export const siteUpdateSchema = z.object({
 export type SiteUpdateRequest = z.infer<typeof siteUpdateSchema>;
 
 // ---------------------------------------------------------------------------
+// Kit types and inventory
+// ---------------------------------------------------------------------------
+
+// arm is accepted here (the unblinded pharmacist defines the map) but is
+// never serialized back outside the kit.read_unblinded path.
+export const kitTypeCreateSchema = z.object({
+  code: z.string().min(1).max(50),
+  arm: z.string().min(1).max(500),
+  description: z.string().max(500).optional(),
+});
+export type KitTypeCreateRequest = z.infer<typeof kitTypeCreateSchema>;
+
+export const kitImportSchema = z.object({
+  csv: z.string().min(1).max(5_000_000),
+  // Ship the whole batch to one site at import; omit to import unassigned.
+  siteId: z.uuid().optional(),
+});
+export type KitImportRequest = z.infer<typeof kitImportSchema>;
+
+// Pharmacist inventory acts: transfer to a site and/or a status change, with
+// the reason captured for the audit trail. 'dispensed' is not settable here.
+export const kitUpdateSchema = z.object({
+  status: z.enum(["available", "damaged", "quarantined"]).optional(),
+  siteId: z.uuid().nullable().optional(),
+  reason: z.string().min(1).max(1000),
+});
+export type KitUpdateRequest = z.infer<typeof kitUpdateSchema>;
+
+// ---------------------------------------------------------------------------
 // Randomization lists (ADR-0001)
 // ---------------------------------------------------------------------------
 

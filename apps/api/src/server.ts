@@ -5,6 +5,7 @@ import type { AuthConfig } from "./auth/config.js";
 import { authPlugin } from "./auth/plugin.js";
 import { auditRoutes } from "./routes/audit.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
+import { kitRoutes } from "./routes/kits.js";
 import { listRoutes } from "./routes/lists.js";
 import { randomizeRoutes } from "./routes/randomize.js";
 import { siteRoutes } from "./routes/sites.js";
@@ -37,6 +38,7 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   });
   await server.register(studyRoutes);
   await server.register(siteRoutes);
+  await server.register(kitRoutes);
   await server.register(listRoutes);
   await server.register(randomizeRoutes);
   await server.register(deliveryRoutes);

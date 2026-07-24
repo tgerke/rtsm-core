@@ -4,6 +4,8 @@ import {
   type AssignmentRow,
   api,
   type DeliveryRow,
+  type KitRow,
+  type KitTypeRow,
   type RandomizationList,
   type RandomizeResult,
   type Site,
@@ -35,8 +37,329 @@ export function StudyPage() {
       {permissions.includes("subject.randomize") && <RandomizeCard />}
       <AssignmentsCard />
       <DeliveriesCard />
+      <KitsCard />
+      {permissions.includes("kit.read_unblinded") && <KitTypesCard />}
       <SitesCard />
     </>
+  );
+}
+
+function KitsCard() {
+  const { study, permissions } = useStudy();
+  const queryClient = useQueryClient();
+  // The unblinded listing adds the kit-to-arm join; every read of it is
+  // logged server-side.
+  const unblinded = permissions.includes("kit.read_unblinded");
+  const kits = useQuery({
+    queryKey: ["kits", study.id, unblinded],
+    queryFn: () => api<KitRow[]>(`/studies/${study.id}/kits${unblinded ? "/unblinded" : ""}`),
+  });
+  const [showImport, setShowImport] = useState(false);
+  const [editing, setEditing] = useState<KitRow | null>(null);
+  const canManage = permissions.includes("kit.manage");
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["kits", study.id] });
+
+  return (
+    <Card
+      title="Kit inventory"
+      actions={
+        canManage ? <Button onClick={() => setShowImport(true)}>Import shipment</Button> : undefined
+      }
+    >
+      {kits.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Kit</th>
+              {unblinded && <th className="pb-2">Type</th>}
+              {unblinded && <th className="pb-2">Arm</th>}
+              <th className="pb-2">Lot</th>
+              <th className="pb-2">Expires</th>
+              <th className="pb-2">Site</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {kits.data.map((kit) => (
+              <tr key={kit.id}>
+                <td className="py-2 font-mono text-xs">{kit.kitNumber}</td>
+                {unblinded && <td className="py-2 font-mono text-xs">{kit.kitTypeCode}</td>}
+                {unblinded && <td className="py-2">{kit.arm}</td>}
+                <td className="py-2">{kit.lot}</td>
+                <td className="py-2 text-slate-500">{kit.expiresOn}</td>
+                <td className="py-2 font-mono text-xs">{kit.siteCode ?? "—"}</td>
+                <td className="py-2">
+                  <StatusBadge status={kit.status} />
+                  {kit.statusReason && (
+                    <span className="ml-2 text-xs text-slate-500">{kit.statusReason}</span>
+                  )}
+                </td>
+                <td className="py-2 text-right">
+                  {canManage && kit.status !== "dispensed" && (
+                    <Button variant="secondary" onClick={() => setEditing(kit)}>
+                      Update
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No kits yet.{" "}
+          {canManage
+            ? "Define kit types, then import a shipment CSV (kit_number,kit_type,lot,expiry)."
+            : "A pharmacist imports and manages the kit inventory. Kit types stay hidden from blinded users."}
+        </p>
+      )}
+      {showImport && (
+        <ImportKitsModal
+          onClose={() => {
+            setShowImport(false);
+            refresh();
+          }}
+        />
+      )}
+      {editing && (
+        <UpdateKitModal
+          kit={editing}
+          onClose={() => {
+            setEditing(null);
+            refresh();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function ImportKitsModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const sites = useSites();
+  const [csv, setCsv] = useState("");
+  const [siteId, setSiteId] = useState("");
+  const importKits = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/kits`, {
+        method: "POST",
+        body: JSON.stringify({ csv, ...(siteId ? { siteId } : {}) }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    setCsv(await file.text());
+  };
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    importKits.mutate();
+  };
+
+  return (
+    <Modal title="Import kit shipment" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="CSV file" hint="Header kit_number,kit_type,lot,expiry (expiry YYYY-MM-DD).">
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            className="text-sm"
+            onChange={(e) => onFile(e.target.files?.[0])}
+          />
+        </Field>
+        <Field label="Content">
+          <textarea
+            className={`${inputClass} h-40 font-mono`}
+            value={csv}
+            onChange={(e) => setCsv(e.target.value)}
+            placeholder={"kit_number,kit_type,lot,expiry\nK-0001,KT-A,LOT-1,2027-01-31"}
+          />
+        </Field>
+        <Field label="Ship to site" hint="Optional; kits can also be transferred later.">
+          <select className={inputClass} value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+            <option value="">— not yet shipped —</option>
+            {(sites.data ?? [])
+              .filter((s) => s.status === "active")
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <ErrorNote message={importKits.error ? importKits.error.message : null} />
+        <Button type="submit" disabled={importKits.isPending || !csv}>
+          {importKits.isPending ? "Importing…" : "Import"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function UpdateKitModal({ kit, onClose }: { kit: KitRow; onClose: () => void }) {
+  const { study } = useStudy();
+  const sites = useSites();
+  const [status, setStatus] = useState("");
+  const [siteId, setSiteId] = useState("");
+  const [reason, setReason] = useState("");
+  const update = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/kits/${kit.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          ...(status ? { status } : {}),
+          ...(siteId ? { siteId } : {}),
+          reason,
+        }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    update.mutate();
+  };
+
+  return (
+    <Modal title={`Update kit ${kit.kitNumber}`} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Status" hint="Leave unchanged for a site transfer only.">
+          <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">— unchanged ({kit.status}) —</option>
+            <option value="available">available</option>
+            <option value="quarantined">quarantined</option>
+            <option value="damaged">damaged</option>
+          </select>
+        </Field>
+        <Field label="Transfer to site">
+          <select className={inputClass} value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+            <option value="">— unchanged ({kit.siteCode ?? "not shipped"}) —</option>
+            {(sites.data ?? [])
+              .filter((s) => s.status === "active")
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <Field label="Reason" hint="Recorded on the kit and in the audit trail.">
+          <input
+            className={inputClass}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <ErrorNote message={update.error ? update.error.message : null} />
+        <Button type="submit" disabled={update.isPending || !reason || (!status && !siteId)}>
+          {update.isPending ? "Updating…" : "Update kit"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function KitTypesCard() {
+  const { study } = useStudy();
+  const queryClient = useQueryClient();
+  const kitTypes = useQuery({
+    queryKey: ["kit-types", study.id],
+    queryFn: () => api<KitTypeRow[]>(`/studies/${study.id}/kit-types`),
+  });
+  const [showCreate, setShowCreate] = useState(false);
+
+  return (
+    <Card
+      title="Kit types (unblinded)"
+      actions={<Button onClick={() => setShowCreate(true)}>Add kit type</Button>}
+    >
+      {kitTypes.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Code</th>
+              <th className="pb-2">Arm</th>
+              <th className="pb-2">Description</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {kitTypes.data.map((t) => (
+              <tr key={t.id}>
+                <td className="py-2 font-mono text-xs">{t.code}</td>
+                <td className="py-2">{t.arm}</td>
+                <td className="py-2 text-slate-500">{t.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No kit types yet. Define the kit-to-arm map before importing kits.
+        </p>
+      )}
+      <p className="mt-3 text-xs text-slate-400">
+        This view is unblinded and every read of it is logged to the audit trail.
+      </p>
+      {showCreate && (
+        <CreateKitTypeModal
+          onClose={() => {
+            setShowCreate(false);
+            queryClient.invalidateQueries({ queryKey: ["kit-types", study.id] });
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CreateKitTypeModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const [code, setCode] = useState("");
+  const [arm, setArm] = useState("");
+  const [description, setDescription] = useState("");
+  const create = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/kit-types`, {
+        method: "POST",
+        body: JSON.stringify({ code, arm, ...(description ? { description } : {}) }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Modal title="Add kit type" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-sm text-slate-600">
+          The code appears on physical kits and must not hint at the arm — blinded staff see kit
+          numbers only, but the code is your unblinded handle for this type.
+        </p>
+        <Field label="Code" hint="e.g. KT-A; unique in this study.">
+          <input className={inputClass} value={code} onChange={(e) => setCode(e.target.value)} />
+        </Field>
+        <Field label="Arm" hint="Must match the arm strings in the randomization list.">
+          <input className={inputClass} value={arm} onChange={(e) => setArm(e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <input
+            className={inputClass}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Field>
+        <ErrorNote message={create.error ? create.error.message : null} />
+        <Button type="submit" disabled={create.isPending || !code || !arm}>
+          {create.isPending ? "Adding…" : "Add kit type"}
+        </Button>
+      </form>
+    </Modal>
   );
 }
 

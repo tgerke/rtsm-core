@@ -14,6 +14,7 @@ export default defineConfig({
       sidebar: [
         { label: "Getting started", items: ["getting-started"] },
         { label: "Integration", items: ["list-format", "edc-delivery"] },
+        { label: "Supply", items: ["kits-and-dispensing"] },
         { label: "Compliance", items: ["blinding", "audit"] },
       ],
     }),

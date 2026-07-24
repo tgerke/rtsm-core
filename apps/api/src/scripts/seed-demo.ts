@@ -1,11 +1,21 @@
 import { activateList, importList, withActor } from "@rtsm-core/core";
-import { createDb, databaseUrl, roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
+import {
+  createDb,
+  databaseUrl,
+  kits,
+  kitTypes,
+  roles,
+  sites,
+  studies,
+  userStudyRoles,
+  users,
+} from "@rtsm-core/db";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../auth/password.js";
 
-// Demo fixtures for local development: three users (one per role split), a
-// study pointed at a local edc-core, two sites, and an activated 12-entry
-// list.
+// Demo fixtures for local development: four users (one per role split), a
+// study pointed at a local edc-core, two sites with kit inventory, and an
+// activated 12-entry list.
 // Idempotent-ish: skips everything if the demo admin already exists.
 //
 // EDC wiring comes from env so the demo can point at a real local edc-core:
@@ -37,6 +47,7 @@ try {
           { username: "admin", fullName: "Demo Admin", isSystemAdmin: true },
           { username: "listmgr", fullName: "Demo List Manager (unblinded)", isSystemAdmin: false },
           { username: "coord", fullName: "Demo Coordinator", isSystemAdmin: false },
+          { username: "pharma", fullName: "Demo Pharmacist (unblinded)", isSystemAdmin: false },
         ].map((u) => ({ ...u, email: `${u.username}@demo.local`, passwordHash })),
       )
       .returning();
@@ -64,10 +75,40 @@ try {
       return user.id;
     };
 
-    await tx.insert(sites).values([
-      { studyId: study.id, code: "SITE-001", name: "Memorial North" },
-      { studyId: study.id, code: "SITE-002", name: "Riverside Clinic" },
-    ]);
+    const seededSites = await tx
+      .insert(sites)
+      .values([
+        { studyId: study.id, code: "SITE-001", name: "Memorial North" },
+        { studyId: study.id, code: "SITE-002", name: "Riverside Clinic" },
+      ])
+      .returning();
+
+    const seededTypes = await tx
+      .insert(kitTypes)
+      .values([
+        { studyId: study.id, code: "KT-A", arm: "Arm A", description: "Active kit" },
+        { studyId: study.id, code: "KT-B", arm: "Arm B", description: "Comparator kit" },
+      ])
+      .returning();
+
+    // Three kits of each type at each site, staggered expiry so FEFO
+    // selection is visible in the demo.
+    const expiries = ["2026-12-31", "2027-06-30", "2027-12-31"];
+    await tx.insert(kits).values(
+      seededSites.flatMap((site, s) =>
+        seededTypes.flatMap((type, t) =>
+          expiries.map((expiresOn, e) => ({
+            studyId: study.id,
+            kitTypeId: type.id,
+            kitNumber: `K-${s + 1}${t + 1}${e + 1}0`,
+            lot: `LOT-2026-${t + 1}`,
+            expiresOn,
+            siteId: site.id,
+            createdBy: userId("pharma"),
+          })),
+        ),
+      ),
+    );
 
     await tx.insert(userStudyRoles).values([
       {
@@ -86,6 +127,12 @@ try {
         userId: userId("coord"),
         studyId: study.id,
         roleId: roleId("coordinator"),
+        grantedBy: userId("admin"),
+      },
+      {
+        userId: userId("pharma"),
+        studyId: study.id,
+        roleId: roleId("pharmacist"),
         grantedBy: userId("admin"),
       },
     ]);
@@ -109,8 +156,12 @@ try {
     }),
   );
 
-  console.log(`seeded demo study ${seeded.study.id} with two sites and an active 12-entry list`);
-  console.log(`users (password "${DEMO_PASSWORD}"): admin, listmgr (unblinded), coord`);
+  console.log(
+    `seeded demo study ${seeded.study.id}: two sites, kit inventory, active 12-entry list`,
+  );
+  console.log(
+    `users (password "${DEMO_PASSWORD}"): admin, listmgr (unblinded), coord, pharma (unblinded)`,
+  );
 } finally {
   await client.end();
 }

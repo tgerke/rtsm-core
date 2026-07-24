@@ -9,6 +9,9 @@ export const PERMISSIONS = [
   "subject.randomize",
   "delivery.manage",
   "site.manage",
+  "kit.manage",
+  "kit.dispense",
+  "kit.read_unblinded",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

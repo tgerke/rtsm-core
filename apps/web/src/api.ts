@@ -63,6 +63,27 @@ export interface Site {
   createdAt: string;
 }
 
+// arm appears only in unblinded serializations (kit.read_unblinded).
+export interface KitTypeRow {
+  id: string;
+  code: string;
+  arm: string;
+  description: string;
+}
+
+export interface KitRow {
+  id: string;
+  kitNumber: string;
+  lot: string;
+  expiresOn: string;
+  status: "available" | "dispensed" | "damaged" | "quarantined";
+  statusReason: string | null;
+  siteCode: string | null;
+  // Present only on the unblinded listing.
+  kitTypeCode?: string;
+  arm?: string;
+}
+
 export interface AssignmentRow {
   id: string;
   subjectKey: string;
