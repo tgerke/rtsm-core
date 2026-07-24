@@ -48,7 +48,7 @@ access log, and roadmap at-rest protection of the arm column.
 
 ## Emergency unblinding
 
-In v0.1, emergency code-break is the EDC's existing break-the-blind action
-on the delivered arm item (ADR-0005). An rtsm-side code-break arrives with
-the dispensing roadmap, in the same step-up-plus-reason shape as list
-activation.
+Emergency code-break is still the EDC's existing break-the-blind action on
+the delivered arm item (ADR-0005). With dispensing and pharmacist users now
+in rtsm-core, the rtsm-side code-break is the next roadmap item, in the
+same step-up-plus-reason shape as list activation.

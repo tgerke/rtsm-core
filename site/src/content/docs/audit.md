@@ -10,9 +10,12 @@ loaders — not just well-behaved application code.
 
 ## Append-only tables
 
-`audit_event`, `randomization_entry`, `assignment`, `delivery_event`, and
-`unblinded_access` reject UPDATE and DELETE for every role. Corrections are
-new rows (a new list version, a re-sent delivery), never edits.
+`audit_event`, `randomization_entry`, `assignment`, `delivery_event`,
+`dispense_event`, and `unblinded_access` reject UPDATE and DELETE for every
+role. Corrections are new rows (a new list version, a re-sent delivery),
+never edits. Kits are mutable — their lifecycle is the point — but every
+change is row-audited and carries a required reason, and a dispensed kit
+can no longer be edited.
 
 ## Hash-chained audit trail
 

@@ -4,6 +4,8 @@ import {
   type AssignmentRow,
   api,
   type DeliveryRow,
+  type DispenseResult,
+  type DispenseRow,
   type KitRow,
   type KitTypeRow,
   type RandomizationList,
@@ -35,12 +37,123 @@ export function StudyPage() {
       </div>
       <ListsCard />
       {permissions.includes("subject.randomize") && <RandomizeCard />}
+      {permissions.includes("kit.dispense") && <DispenseCard />}
       <AssignmentsCard />
+      <DispenseLogCard />
       <DeliveriesCard />
       <KitsCard />
       {permissions.includes("kit.read_unblinded") && <KitTypesCard />}
       <SitesCard />
     </>
+  );
+}
+
+function DispenseCard() {
+  const { study } = useStudy();
+  const queryClient = useQueryClient();
+  const sites = useSites();
+  const [subjectKey, setSubjectKey] = useState("");
+  const [siteId, setSiteId] = useState("");
+  const [result, setResult] = useState<DispenseResult | null>(null);
+  const activeSites = (sites.data ?? []).filter((s) => s.status === "active");
+
+  const dispense = useMutation({
+    mutationFn: () =>
+      api<DispenseResult>(
+        `/studies/${study.id}/subjects/${encodeURIComponent(subjectKey)}/dispense`,
+        { method: "POST", body: JSON.stringify({ siteId }) },
+      ),
+    onSuccess: (data) => {
+      setResult(data);
+      setSubjectKey("");
+      queryClient.invalidateQueries({ queryKey: ["dispenses", study.id] });
+      queryClient.invalidateQueries({ queryKey: ["kits", study.id] });
+    },
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    setResult(null);
+    dispense.mutate();
+  };
+
+  return (
+    <Card title="Dispense a kit">
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-4">
+        <div className="grow">
+          <Field label="Subject key" hint="Must already be randomized.">
+            <input
+              className={inputClass}
+              value={subjectKey}
+              onChange={(e) => setSubjectKey(e.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="grow">
+          <Field label="Site" hint="The kit comes from this site's inventory.">
+            <select
+              className={inputClass}
+              value={siteId}
+              onChange={(e) => setSiteId(e.target.value)}
+            >
+              <option value="">—</option>
+              {activeSites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Button type="submit" disabled={dispense.isPending || !subjectKey || !siteId}>
+          {dispense.isPending ? "Dispensing…" : "Dispense"}
+        </Button>
+      </form>
+      <div className="mt-4 space-y-2">
+        <ErrorNote message={dispense.error ? dispense.error.message : null} />
+        {result && (
+          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Dispense kit <span className="font-mono">{result.kitNumber}</span> (lot {result.lot},
+            expires {result.expiresOn}) to {result.subjectKey}. The kit was matched to their
+            assignment server-side; you remain blinded.
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DispenseLogCard() {
+  const { study } = useStudy();
+  const dispenses = useQuery({
+    queryKey: ["dispenses", study.id],
+    queryFn: () => api<DispenseRow[]>(`/studies/${study.id}/dispenses`),
+  });
+  if (!dispenses.data?.length) return null;
+
+  return (
+    <Card title="Dispense log">
+      <table className="w-full text-left text-sm">
+        <thead className="text-xs text-slate-500 uppercase">
+          <tr>
+            <th className="pb-2">Subject</th>
+            <th className="pb-2">Kit</th>
+            <th className="pb-2">Site</th>
+            <th className="pb-2">When</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {dispenses.data.map((row) => (
+            <tr key={row.id}>
+              <td className="py-2">{row.subjectKey}</td>
+              <td className="py-2 font-mono text-xs">{row.kitNumber}</td>
+              <td className="py-2 font-mono text-xs">{row.siteCode}</td>
+              <td className="py-2 text-slate-500">{formatDateTime(row.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
   );
 }
 

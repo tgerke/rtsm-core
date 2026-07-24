@@ -2,9 +2,11 @@
 
 `rtsm-core` is a greenfield, AGPL-3.0 open-source Randomization and Trial
 Supply Management (RTSM/IRT) system for clinical trials. It is the fourth
-sibling to `edc-core`, `ctms-core`, and `lims-core`. v0.1 covers
-randomization-list management and assignment delivery; kit and depot logic is
-roadmap. See `docs/plan.md` for the design and `docs/adr/` for the decisions.
+sibling to `edc-core`, `ctms-core`, and `lims-core`. v0.1 covered
+randomization-list management and assignment delivery; v0.2 adds sites,
+site-scoped grants, kit inventory, and blinded dispensing (ADR-0006). Depot
+logic and the rtsm-side code-break are roadmap. See `docs/plan.md` for the
+design and `docs/adr/` for the decisions.
 
 ## The one hard rule
 
@@ -30,17 +32,20 @@ why this boundary exists.
   as the owner (`DATABASE_URL`); the server connects as `rtsm_app`
   (`APP_DATABASE_URL`).
 - **Regulated rows are append-only, so tests can't self-clean.**
-  `audit_event`, `randomization_entry`, `assignment`, and `delivery_event`
-  reject UPDATE/DELETE by trigger. Test fixtures use unique suffixes
-  (`test-helpers.ts`) instead of teardown.
+  `audit_event`, `randomization_entry`, `assignment`, `delivery_event`,
+  `dispense_event`, and `unblinded_access` reject UPDATE/DELETE by trigger.
+  Test fixtures use unique suffixes (`test-helpers.ts`) instead of teardown.
 - **Every audited write goes through `withActor`.** The audit trigger reads
   the actor from per-transaction settings; a write outside `withActor`
   attributes to `system`. Never insert into a domain table on a bare
   connection expecting attribution.
 - **Blinding is role-gated, and every unblinded read is audited.** Arm values
-  are returned only to holders of `list.read_unblinded`, and each such read
-  writes an `audit_event` row (ADR-0003). Never add a route or serializer
-  that exposes an arm without going through the masking helpers.
+  are returned only to holders of `list.read_unblinded` (master list,
+  payloads) or `kit.read_unblinded` (kit-to-arm map), and each such read
+  writes an `unblinded_access` row (ADR-0003, ADR-0006). Blinded kit
+  serializations must not carry any kit-type identifier — with one type per
+  arm, even the code leaks. Never add a route or serializer that exposes an
+  arm without going through the masking helpers.
 - **List activation requires re-authentication.** Activating a randomization
   list re-verifies the actor's password and captures a reason (ADR: activation
   is the GxP-significant act here). An OIDC-only account with no local

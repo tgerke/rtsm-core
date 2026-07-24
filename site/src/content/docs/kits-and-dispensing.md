@@ -1,6 +1,6 @@
 ---
-title: Kits and inventory
-description: The kit-to-arm map, site inventory, and what blinded users can see.
+title: Kits and dispensing
+description: The kit-to-arm map, site inventory, and blinded dispensing.
 ---
 
 Kits are how a blinded trial hands a subject the right treatment without
@@ -53,3 +53,30 @@ status — and no kit-type identifier at all. With one kit type per arm, even
 the type code would leak the allocation, so blinded serializations simply
 don't carry it. The unblinded listing (`kit.read_unblinded`) adds the type
 and arm columns, and each read of it is logged.
+
+## Dispensing
+
+Dispensing is how the map gets used without being seen. A coordinator or
+pharmacist with `kit.dispense` submits a randomized subject and a site; the
+server resolves the subject's arm to a kit type and picks the
+earliest-expiring available, unexpired kit of that type at the site (FEFO),
+all inside one transaction. What comes back is a kit number, lot, and
+expiry — never an arm, never a type. Concurrent dispenses at the same site
+get distinct kits.
+
+Each dispense appends a row to the append-only `dispense_event` log — the
+supply accountability trail, visible blinded (subject, kit number, site,
+time). Dispensing is repeatable: every visit's dispense is its own event.
+Visit schedules are protocol logic and stay outside the system, like
+stratum definitions.
+
+If access is site-scoped, dispensing works only at the granted site.
+Dispensing does not touch the EDC; the intake carries arm assignments only
+(ADR-0006).
+
+## Not here yet
+
+Emergency code-break is next on the roadmap now that dispensing exists
+(until then the EDC's break-the-blind action on the delivered arm is the
+emergency procedure, per ADR-0005). Depot management and automated resupply
+come after.

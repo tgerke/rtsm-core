@@ -17,7 +17,7 @@ keep the "Proven by" column pointing at real test names.
 | ID | Requirement (plain language) | Enforced by | Proven by |
 | --- | --- | --- | --- |
 | P11-01 | Audit trail cannot be altered or fabricated | `audit_event` append-only trigger; runtime role's INSERT revoked; `SECURITY DEFINER` writer (`0001`, `0002`) | `db/compliance.test.ts` → "append-only enforcement", "least-privilege runtime role" |
-| P11-02 | Record changes append; prior values stay visible (§11.10(e)) | Append-only `randomization_entry`, `assignment`, `delivery_event`; list corrections are new versions | `db/compliance.test.ts` → "rejects UPDATE and DELETE on randomization_entry" |
+| P11-02 | Record changes append; prior values stay visible (§11.10(e)) | Append-only `randomization_entry`, `assignment`, `delivery_event`, `dispense_event`; list corrections are new versions; kit changes are row-audited with required reasons | `db/compliance.test.ts` → "rejects UPDATE and DELETE on randomization_entry"; `routes/dispense.test.ts` → "shows the dispense log blinded and keeps events append-only" |
 | P11-03 | Retroactive edits are detectable | Hash chain + `rtsm_verify_audit_chain()` (`0001`) | `db/compliance.test.ts` → "audit chain integrity" |
 | P11-04 | Access is authority-checked; admin ≠ trial authority | Grant-based study-scoped RBAC; system admins hold no trial capabilities | `routes/randomize.test.ts` → "requires subject.randomize"; `routes/list.test.ts` → "requires list.manage" |
 | P11-06 | GxP-significant acts are signed with re-authentication and meaning | List activation requires password step-up plus a captured reason (`listActivateSchema`, `reauthenticate`) | `routes/list.test.ts` → "refuses activation with a wrong password", "activates with re-auth" |
@@ -31,7 +31,9 @@ keep the "Proven by" column pointing at real test names.
 | BL-01 | The master list is unreachable from the EDC | Separate application and database; integration only through the ADR-0010 intake | Architecture (edc-core ADR-0016); no EDC connection exists in this codebase |
 | BL-02 | Arms are visible only to unblinded roles | `list.read_unblinded` held only by `list_manager`; blinded serializations carry no arm; transfer-log masking | `routes/randomize.test.ts` → "never reveals the arm"; `routes/delivery.test.ts` → "masks arms for blinded members" |
 | BL-03 | Unblinded access is recorded | `unblinded_access` append-only log written in the read transaction, audit-chained | `routes/list.test.ts` → "logs the exposure" |
-| BL-04 | The audit trail does not unblind its reviewers | `rtsm_audit()` strips `arm`/`payload` (and credentials) from snapshots | `db/compliance.test.ts` → "blinding and credentials never enter the audit trail" |
+| BL-04 | The audit trail does not unblind its reviewers | `rtsm_audit()` strips `arm`/`payload` (and credentials) from snapshots, including `kit_type.arm` | `db/compliance.test.ts` → "blinding and credentials never enter the audit trail"; `routes/kits.test.ts` → "keeps the kit-to-arm map out of the audit trail" |
+| BL-05 | The kit-to-arm map is visible only to unblinded supply roles, and each read is recorded | `kit.read_unblinded` held only by `pharmacist`; blinded kit serializations carry no kit-type identifier; reads logged to `unblinded_access` (ADR-0006) | `routes/kits.test.ts` → "gates the map behind kit.read_unblinded", "logs and audit-chains every unblinded read of the map", "lists it blinded with no kit-type identifier" |
+| BL-06 | Dispensing reveals no arm: kit selection is a server-side join | `dispenseKit` resolves arm → kit type inside the transaction; the response and dispense log carry kit numbers only (ADR-0006) | `routes/dispense.test.ts` → "hands the earliest-expiring kit of the subject's arm, blinded", "shows the dispense log blinded and keeps events append-only" |
 
 ## Transfer record (E6(R3) §4.2.5, via edc-core ADR-0010)
 

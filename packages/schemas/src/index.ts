@@ -78,6 +78,13 @@ export const kitUpdateSchema = z.object({
 });
 export type KitUpdateRequest = z.infer<typeof kitUpdateSchema>;
 
+// The dispensing site; the server resolves the subject's arm to a kit
+// without revealing either.
+export const dispenseRequestSchema = z.object({
+  siteId: z.uuid(),
+});
+export type DispenseRequest = z.infer<typeof dispenseRequestSchema>;
+
 // ---------------------------------------------------------------------------
 // Randomization lists (ADR-0001)
 // ---------------------------------------------------------------------------

@@ -39,26 +39,39 @@ anti-lock-in argument real.
   per-study audit trail written by a `SECURITY DEFINER` trigger, DML-only
   runtime role, append-only regulated tables (ADR-0002).
 
+## v0.2 scope (built)
+
+- **Sites and site-scoped RBAC.** A `site` table per study; grants can be
+  scoped to a site, in which case they authorize site-bound actions
+  (randomizing at a site, dispensing) only there and never the site-less
+  form. Randomization can name a site and the assignment records it.
+- **Kit types and inventory** (ADR-0006). The kit-to-arm map lives on
+  `kit_type`, gated by `kit.read_unblinded` (held by the new unblinded
+  `pharmacist` role) with every read logged. Kits import as a shipment CSV,
+  live at sites, and carry a trigger-audited lifecycle
+  (available/quarantined/damaged/dispensed) with required reasons. Blinded
+  serializations carry no kit-type identifier at all.
+- **Dispensing** (ADR-0006). A blinded server-side join: subject + site in,
+  kit number out — FEFO selection of an unexpired kit matching the
+  subject's arm, concurrency-safe, appended to the append-only
+  `dispense_event` accountability log.
+
 ## Roadmap
 
-Ordered by how the ADRs stage the work; none of this is started.
+Ordered by how the ADRs stage the work.
 
-1. **Kit and inventory management.** Kit-to-arm map, site inventory,
-   dispensing visits. This is where a site table and site-scoped RBAC grants
-   arrive, and where pharmacist/supply roles (unblinded, rtsm-only users, per
-   Annex 1 §4.1.2 as read in edc-core's ADR-0016) get built.
-2. **rtsm-side emergency code-break** (revisits ADR-0005), needed once
-   dispensing exists here rather than only in the EDC.
-3. **Depot and resupply logistics.**
-4. **In-app list generation** (revisits ADR-0001) only if a validated
+1. **rtsm-side emergency code-break** (revisits ADR-0005; its condition is
+   met now that dispensing and pharmacist users exist here).
+2. **Depot and resupply logistics.**
+3. **In-app list generation** (revisits ADR-0001) only if a validated
    in-house generator earns its place; uploading stays the default.
-5. **Validation pack + release mechanism**: port edc-core's
+4. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`
    publishing GHCR images.
-6. **At-rest protection of arms** (column-level encryption of
-   `randomization_entry.arm`, ADR-0003's stated limit) and encrypted storage
-   of the EDC key (ADR-0004).
+5. **At-rest protection of arms** (column-level encryption of
+   `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit)
+   and encrypted storage of the EDC key (ADR-0004).
 
 ## clinical-stack wiring (deferred until images exist)
 

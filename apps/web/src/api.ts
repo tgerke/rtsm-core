@@ -103,6 +103,23 @@ export interface DeliveryRow {
   createdAt: string;
 }
 
+export interface DispenseResult {
+  subjectKey: string;
+  dispenseEventId: string;
+  kitNumber: string;
+  lot: string;
+  expiresOn: string;
+  dispensedAt: string;
+}
+
+export interface DispenseRow {
+  id: string;
+  subjectKey: string;
+  kitNumber: string;
+  siteCode: string;
+  createdAt: string;
+}
+
 export interface RandomizeResult {
   assignmentId: string;
   randomizationId: string;

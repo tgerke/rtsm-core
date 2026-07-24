@@ -1,5 +1,6 @@
 export * from "./actor.js";
 export * from "./delivery.js";
+export * from "./dispense.js";
 export * from "./errors.js";
 export * from "./kits.js";
 export * from "./lists.js";

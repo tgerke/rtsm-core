@@ -5,13 +5,14 @@ import type { AuthConfig } from "./auth/config.js";
 import { authPlugin } from "./auth/plugin.js";
 import { auditRoutes } from "./routes/audit.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
+import { dispenseRoutes } from "./routes/dispense.js";
 import { kitRoutes } from "./routes/kits.js";
 import { listRoutes } from "./routes/lists.js";
 import { randomizeRoutes } from "./routes/randomize.js";
 import { siteRoutes } from "./routes/sites.js";
 import { studyRoutes } from "./routes/studies.js";
 
-export const API_VERSION = "0.1.0";
+export const API_VERSION = "0.2.0";
 
 export interface BuildServerOptions {
   db?: Db;
@@ -39,6 +40,7 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   await server.register(studyRoutes);
   await server.register(siteRoutes);
   await server.register(kitRoutes);
+  await server.register(dispenseRoutes);
   await server.register(listRoutes);
   await server.register(randomizeRoutes);
   await server.register(deliveryRoutes);

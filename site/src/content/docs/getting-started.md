@@ -42,8 +42,15 @@ in the request. Study-wide grants (no `siteId`) behave exactly as before.
 The demo seeds two kit types (`KT-A`, `KT-B`) and a small inventory at each
 site. Sign in as `pharma` to see the kit-to-arm map and the unblinded
 inventory; as `coord`, the same inventory shows kit numbers and status but
-no kit types. See [Kits and inventory](/rtsm-core/kits-and-dispensing/) for the
-shipment CSV format and lifecycle.
+no kit types.
+
+To walk the whole flow: as `coord`, randomize a subject at `SITE-001`, then
+dispense to that subject at the same site. The kit number that comes back
+was matched to the subject's arm server-side; the staggered expiry dates in
+the seed make the FEFO (first-expiry-first-out) selection visible on
+repeat dispenses. See
+[Kits and dispensing](/rtsm-core/kits-and-dispensing/) for the shipment CSV
+format, lifecycle, and blinding rules.
 
 ## Point it at a real edc-core
 
