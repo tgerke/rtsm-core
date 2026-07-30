@@ -1,4 +1,5 @@
 export * from "./actor.js";
+export * from "./codebreak.js";
 export * from "./delivery.js";
 export * from "./dispense.js";
 export * from "./errors.js";

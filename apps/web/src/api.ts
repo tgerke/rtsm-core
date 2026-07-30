@@ -120,6 +120,22 @@ export interface DispenseRow {
   createdAt: string;
 }
 
+// The arm appears exactly once, in the code-break response (ADR-0007).
+export interface CodeBreakResult {
+  codeBreakId: string;
+  subjectKey: string;
+  arm: string;
+  createdAt: string;
+}
+
+export interface CodeBreakRow {
+  id: string;
+  subjectKey: string;
+  reason: string;
+  performedBy: string;
+  createdAt: string;
+}
+
 export interface RandomizeResult {
   assignmentId: string;
   randomizationId: string;

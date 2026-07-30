@@ -3,6 +3,8 @@ import { type FormEvent, useState } from "react";
 import {
   type AssignmentRow,
   api,
+  type CodeBreakResult,
+  type CodeBreakRow,
   type DeliveryRow,
   type DispenseResult,
   type DispenseRow,
@@ -38,8 +40,10 @@ export function StudyPage() {
       <ListsCard />
       {permissions.includes("subject.randomize") && <RandomizeCard />}
       {permissions.includes("kit.dispense") && <DispenseCard />}
+      {permissions.includes("subject.codebreak") && <CodeBreakCard />}
       <AssignmentsCard />
       <DispenseLogCard />
+      {permissions.includes("audit.review") && <CodeBreakLogCard />}
       <DeliveriesCard />
       <KitsCard />
       {permissions.includes("kit.read_unblinded") && <KitTypesCard />}
@@ -119,6 +123,158 @@ function DispenseCard() {
           </p>
         )}
       </div>
+    </Card>
+  );
+}
+
+function CodeBreakCard() {
+  const { study } = useStudy();
+  const queryClient = useQueryClient();
+  const [subjectKey, setSubjectKey] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [result, setResult] = useState<CodeBreakResult | null>(null);
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    setResult(null);
+    setConfirming(true);
+  };
+
+  return (
+    <Card title="Emergency code-break">
+      <p className="text-sm text-slate-600">
+        Unblinds one subject for an urgent safety decision. The act is permanently recorded — who,
+        when, and why — and the study team can see that it happened.
+      </p>
+      <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-4">
+        <div className="grow">
+          <Field label="Subject key" hint="Must already be randomized.">
+            <input
+              className={inputClass}
+              value={subjectKey}
+              onChange={(e) => setSubjectKey(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Button type="submit" disabled={!subjectKey}>
+          Break the blind…
+        </Button>
+      </form>
+      {result && (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {result.subjectKey} is assigned to <span className="font-semibold">{result.arm}</span>.
+          This unblinding was recorded at {formatDateTime(result.createdAt)}.
+        </p>
+      )}
+      {confirming && (
+        <CodeBreakModal
+          subjectKey={subjectKey}
+          onClose={() => setConfirming(false)}
+          onBroken={(data) => {
+            setConfirming(false);
+            setResult(data);
+            setSubjectKey("");
+            queryClient.invalidateQueries({ queryKey: ["codebreaks", study.id] });
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CodeBreakModal({
+  subjectKey,
+  onClose,
+  onBroken,
+}: {
+  subjectKey: string;
+  onClose: () => void;
+  onBroken: (result: CodeBreakResult) => void;
+}) {
+  const { study } = useStudy();
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+  const breakBlind = useMutation({
+    mutationFn: () =>
+      api<CodeBreakResult>(
+        `/studies/${study.id}/subjects/${encodeURIComponent(subjectKey)}/codebreak`,
+        { method: "POST", body: JSON.stringify({ password, reason }) },
+      ),
+    onSuccess: onBroken,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    breakBlind.mutate();
+  };
+
+  return (
+    <Modal title={`Break the blind for ${subjectKey}`} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          You are about to see this subject's arm. The unblinding cannot be undone or erased from
+          the record. Re-enter your password to sign this action; the reason and your identity join
+          the audit trail.
+        </p>
+        <Field label="Reason" hint="e.g. the safety event requiring the treatment to be known.">
+          <input
+            className={inputClass}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <Field label="Password">
+          <input
+            className={inputClass}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+        </Field>
+        <ErrorNote message={breakBlind.error ? breakBlind.error.message : null} />
+        <Button type="submit" disabled={breakBlind.isPending || !password || !reason}>
+          {breakBlind.isPending ? "Unblinding…" : "Unblind this subject"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function CodeBreakLogCard() {
+  const { study } = useStudy();
+  const codebreaks = useQuery({
+    queryKey: ["codebreaks", study.id],
+    queryFn: () => api<CodeBreakRow[]>(`/studies/${study.id}/codebreaks`),
+  });
+  if (!codebreaks.data?.length) return null;
+
+  return (
+    <Card title="Code-break log">
+      <table className="w-full text-left text-sm">
+        <thead className="text-xs text-slate-500 uppercase">
+          <tr>
+            <th className="pb-2">Subject</th>
+            <th className="pb-2">Reason</th>
+            <th className="pb-2">By</th>
+            <th className="pb-2">When</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {codebreaks.data.map((row) => (
+            <tr key={row.id}>
+              <td className="py-2">{row.subjectKey}</td>
+              <td className="py-2 text-slate-500">{row.reason}</td>
+              <td className="py-2 font-mono text-xs">{row.performedBy}</td>
+              <td className="py-2 text-slate-500">{formatDateTime(row.createdAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-xs text-slate-400">
+        Every emergency unblinding, without the arm — the record of the break is visible; what was
+        seen stays with the person who broke it.
+      </p>
     </Card>
   );
 }

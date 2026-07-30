@@ -7,6 +7,7 @@ export const PERMISSIONS = [
   "list.manage",
   "list.read_unblinded",
   "subject.randomize",
+  "subject.codebreak",
   "delivery.manage",
   "site.manage",
   "kit.manage",

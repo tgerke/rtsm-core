@@ -3,10 +3,10 @@
 `rtsm-core` is a greenfield, AGPL-3.0 open-source Randomization and Trial
 Supply Management (RTSM/IRT) system for clinical trials. It is the fourth
 sibling to `edc-core`, `ctms-core`, and `lims-core`. v0.1 covered
-randomization-list management and assignment delivery; v0.2 adds sites,
-site-scoped grants, kit inventory, and blinded dispensing (ADR-0006). Depot
-logic and the rtsm-side code-break are roadmap. See `docs/plan.md` for the
-design and `docs/adr/` for the decisions.
+randomization-list management and assignment delivery; v0.2 added sites,
+site-scoped grants, kit inventory, and blinded dispensing (ADR-0006); v0.3
+adds the emergency code-break (ADR-0007). Depot logic is roadmap. See
+`docs/plan.md` for the design and `docs/adr/` for the decisions.
 
 ## The one hard rule
 
@@ -33,7 +33,8 @@ why this boundary exists.
   (`APP_DATABASE_URL`).
 - **Regulated rows are append-only, so tests can't self-clean.**
   `audit_event`, `randomization_entry`, `assignment`, `delivery_event`,
-  `dispense_event`, and `unblinded_access` reject UPDATE/DELETE by trigger.
+  `dispense_event`, `code_break`, and `unblinded_access` reject
+  UPDATE/DELETE by trigger.
   Test fixtures use unique suffixes (`test-helpers.ts`) instead of teardown.
 - **Every audited write goes through `withActor`.** The audit trigger reads
   the actor from per-transaction settings; a write outside `withActor`

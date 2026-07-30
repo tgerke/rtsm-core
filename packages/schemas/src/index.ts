@@ -118,6 +118,17 @@ export const randomizeRequestSchema = z.object({
 export type RandomizeRequest = z.infer<typeof randomizeRequestSchema>;
 
 // ---------------------------------------------------------------------------
+// Emergency code-break (ADR-0007)
+// ---------------------------------------------------------------------------
+
+// Same step-up shape as list activation: password plus a captured reason.
+export const codeBreakRequestSchema = z.object({
+  password: z.string().min(1),
+  reason: z.string().min(1).max(1000),
+});
+export type CodeBreakRequest = z.infer<typeof codeBreakRequestSchema>;
+
+// ---------------------------------------------------------------------------
 // Outbound EDC intake payload. Mirrors edc-core's rtsmAssignmentSchema
 // (apps/api/src/services/rtsm.ts) — the ADR-0010 wire contract.
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # ADR-0005: Emergency unblinding stays in the EDC for v0.1
 
-Status: accepted (2026-07-23)
+Status: accepted (2026-07-23); superseded by ADR-0007 (2026-07-30)
 
 ## Context
 

@@ -13,7 +13,7 @@ import {
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../auth/password.js";
 
-// Demo fixtures for local development: four users (one per role split), a
+// Demo fixtures for local development: five users (one per role split), a
 // study pointed at a local edc-core, two sites with kit inventory, and an
 // activated 12-entry list.
 // Idempotent-ish: skips everything if the demo admin already exists.
@@ -48,6 +48,7 @@ try {
           { username: "listmgr", fullName: "Demo List Manager (unblinded)", isSystemAdmin: false },
           { username: "coord", fullName: "Demo Coordinator", isSystemAdmin: false },
           { username: "pharma", fullName: "Demo Pharmacist (unblinded)", isSystemAdmin: false },
+          { username: "medmon", fullName: "Demo Medical Monitor", isSystemAdmin: false },
         ].map((u) => ({ ...u, email: `${u.username}@demo.local`, passwordHash })),
       )
       .returning();
@@ -135,6 +136,12 @@ try {
         roleId: roleId("pharmacist"),
         grantedBy: userId("admin"),
       },
+      {
+        userId: userId("medmon"),
+        studyId: study.id,
+        roleId: roleId("medical_monitor"),
+        grantedBy: userId("admin"),
+      },
     ]);
     return { study, listmgrId: userId("listmgr") };
   });
@@ -160,7 +167,7 @@ try {
     `seeded demo study ${seeded.study.id}: two sites, kit inventory, active 12-entry list`,
   );
   console.log(
-    `users (password "${DEMO_PASSWORD}"): admin, listmgr (unblinded), coord, pharma (unblinded)`,
+    `users (password "${DEMO_PASSWORD}"): admin, listmgr (unblinded), coord, pharma (unblinded), medmon (code-break)`,
   );
 } finally {
   await client.end();

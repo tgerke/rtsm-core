@@ -56,20 +56,28 @@ anti-lock-in argument real.
   subject's arm, concurrency-safe, appended to the append-only
   `dispense_event` accountability log.
 
+## v0.3 scope (built)
+
+- **Emergency code-break** (ADR-0007, superseding ADR-0005's deferral). A
+  `medical_monitor` role holding only `subject.codebreak` unblinds one
+  subject with the list-activation shape: password step-up plus a captured
+  reason. The append-only `code_break` row is arm-free — blinded staff with
+  `audit.review` see that a break happened, who, and why; the arm exposure
+  is the paired `unblinded_access` row in the same transaction. Site-scoped
+  grants reach only subjects randomized at their site.
+
 ## Roadmap
 
 Ordered by how the ADRs stage the work.
 
-1. **rtsm-side emergency code-break** (revisits ADR-0005; its condition is
-   met now that dispensing and pharmacist users exist here).
-2. **Depot and resupply logistics.**
-3. **In-app list generation** (revisits ADR-0001) only if a validated
+1. **Depot and resupply logistics.**
+2. **In-app list generation** (revisits ADR-0001) only if a validated
    in-house generator earns its place; uploading stays the default.
-4. **Validation pack + release mechanism**: port edc-core's
+3. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`
    publishing GHCR images.
-5. **At-rest protection of arms** (column-level encryption of
+4. **At-rest protection of arms** (column-level encryption of
    `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit)
    and encrypted storage of the EDC key (ADR-0004).
 
