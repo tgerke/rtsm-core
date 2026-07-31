@@ -1,6 +1,6 @@
-# ADR-0009: Depots, shipments, and threshold resupply (proposed)
+# ADR-0009: Depots, shipments, and threshold resupply
 
-Status: proposed (2026-07-31). Extends ADR-0006 and retires its direct
+Status: accepted (2026-07-31). Extends ADR-0006 and retires its direct
 site-transfer mechanic.
 
 ## Context
@@ -14,7 +14,7 @@ that a transfer is a shipment with days in transit and a receiving act at
 the far end, and the question every site eventually asks — who notices we
 are running low, and when. Roadmap item 1 (docs/plan.md) is this gap.
 
-## Decisions (proposed)
+## Decisions
 
 1. **A depot is its own table, not a flavor of site.** Depots hold stock
    and nothing else: no subjects, no dispensing, no site-scoped grants.

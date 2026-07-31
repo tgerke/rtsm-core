@@ -70,10 +70,10 @@ anti-lock-in argument real.
 
 Ordered by how the ADRs stage the work.
 
-1. **Depot and resupply logistics**: ADR-0009 (proposed) — depots as their
+1. **Depot and resupply logistics**: ADR-0009 (accepted) — depots as their
    own table, shipments as the only way kits move, blinded site receipt,
    and threshold-triggered resupply requests a pharmacist turns into
-   shipments. Awaiting review before the build starts.
+   shipments. The next build.
 2. **Covariate-adaptive randomization** (amends ADR-0001): a design spike
    exists — `docs/design/adaptive-randomization.md` and ADR-0008 (proposed)
    — proposing an in-process Pocock–Simon minimization engine, opt-in per
