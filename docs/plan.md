@@ -66,27 +66,45 @@ anti-lock-in argument real.
   is the paired `unblinded_access` row in the same transaction. Site-scoped
   grants reach only subjects randomized at their site.
 
+## v0.4 scope (built)
+
+- **Depots and shipments** (ADR-0009). A `depot` is its own table — no
+  subjects, no site-scoped grants. Kits import to a depot and move only by
+  shipment: the pharmacist asks for quantities by type, the server picks
+  FEFO kits within a per-shipment shelf-life floor, and dispatch flips them
+  to `in_transit`. Receipt is a blinded, site-scoped act
+  (`shipment.receive`) that dispositions every kit: available, damaged with
+  a reason, or lost (terminal). The v0.2 direct site transfer and
+  import-to-site are gone.
+- **Threshold resupply** (ADR-0009). Per site-and-kit-type trigger/target
+  levels; any stock-reducing write (dispense, damage, quarantine, receipt
+  shortfall) re-evaluates in the same transaction, counting in-transit
+  stock, and opens at most one request. Nothing ships until a pharmacist
+  turns the request into a shipment or dismisses it with a reason.
+- **Do-not-dispense window** (ADR-0009, E6(R3) §3.15.3(c)(v)): a per-study
+  number of days; kits expiring inside it stop being dispensable.
+
 ## Roadmap
 
 Ordered by how the ADRs stage the work.
 
-1. **Depot and resupply logistics**: ADR-0009 (accepted) — depots as their
-   own table, shipments as the only way kits move, blinded site receipt,
-   and threshold-triggered resupply requests a pharmacist turns into
-   shipments. The next build.
-2. **Covariate-adaptive randomization** (amends ADR-0001): a design spike
+1. **Covariate-adaptive randomization** (amends ADR-0001): a design spike
    exists — `docs/design/adaptive-randomization.md` and ADR-0008 (proposed)
    — proposing an in-process Pocock–Simon minimization engine, opt-in per
    study. Blocked on the statistician's open questions and `[VERIFY]`
    regulatory checks recorded there. In-app generation of *static* lists
    remains a separate, conditional question; uploading stays the default.
-3. **Validation pack + release mechanism**: port edc-core's
+2. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`
    publishing GHCR images.
-4. **At-rest protection of arms** (column-level encryption of
+3. **At-rest protection of arms** (column-level encryption of
    `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit)
    and encrypted storage of the EDC key (ADR-0004).
+4. **Returns and destruction accountability**: E6(R3) §2.10.4 and
+   §3.15.3(c)(iii)–(iv) expect return/retrieval/disposition records;
+   ADR-0009 ends at dispensing, and `dispensed`/`lost` stay terminal until
+   a future ADR builds the return flow.
 
 ## clinical-stack wiring (deferred until images exist)
 

@@ -44,6 +44,25 @@ who, when, and purpose of each exposure.
 | BL-06 | Dispensing reveals no arm: kit selection is a server-side join | `dispenseKit` resolves arm → kit type inside the transaction; the response and dispense log carry kit numbers only (ADR-0006) | `routes/dispense.test.ts` → "hands the earliest-expiring kit of the subject's arm, blinded", "shows the dispense log blinded and keeps events append-only" |
 | BL-07 | Emergency unblinding is restricted, single-subject, and recorded | `subject.codebreak` held only by `medical_monitor`; the response carries the arm once; the arm-free append-only `code_break` row and the `unblinded_access` row are written in one transaction; site-scoped grants bind to the assignment's site (ADR-0007) | `routes/codebreak.test.ts` → "returns the arm once and logs the exposure in the same transaction", "refuses blinded and administrative roles", "binds a site-scoped grant to the assignment's site" |
 
+## Supply accountability (E6(R3) §2.10.4, §3.15.3; verified against source text 2026-07-31)
+
+E6(R3) §3.15.3(c)(ii) requires records of "the identity, shipment, receipt,
+return and destruction or alternative disposition" of investigational
+product; §2.10.4 names the content (dates, quantities, batch/serial numbers,
+expiration dates, unique code numbers); §3.15.3(c)(i) requires timely
+provision "to avoid any interruption to the trial"; §3.15.3(c)(v) requires
+product "stable over the period of use and only used within the current
+shelf life". Return/retrieval/destruction records (§3.15.3(c)(iii)–(iv))
+are a stated gap: ADR-0009 ends at dispensing.
+
+| ID | Requirement (plain language) | Enforced by | Proven by |
+| --- | --- | --- | --- |
+| SUP-01 | Every kit movement is a recorded shipment with a receiving act | Kits move only by shipment (ADR-0009): dispatch flips members to `in_transit`, receipt dispositions every kit; `shipment`/`shipment_kit` rows are trigger-audited; the direct transfer path is removed | `routes/shipments.test.ts` → "dispatches FEFO kits within the shelf-life floor and flips them in_transit", "receives with per-kit dispositions, bound to the destination site"; `routes/kits.test.ts` → "quarantines kits with a reason, but never moves them or touches flow-owned states" |
+| SUP-02 | Receipt is site-bound and accounts for every kit | `shipment.receive` with site-scoped grants bound to the destination; a receipt missing any kit's disposition is rejected; damaged/missing require reasons and land as `damaged`/`lost` | `routes/shipments.test.ts` → "receives with per-kit dispositions, bound to the destination site" |
+| SUP-03 | Sites are resupplied before stock interrupts treatment | Per site/kit-type trigger and target levels; every stock-reducing write re-evaluates in-transaction (counting in-transit stock) and opens at most one request; a pharmacist dispatches or dismisses with a reason | `routes/resupply.test.ts` → "opens one request when dispensing crosses the trigger, and dispatch fulfills it", "opens on damage at the site, counts in-transit stock, and dismisses with a reason" |
+| SUP-04 | Kits nearing expiry stop shipping and dispensing | Per-shipment `minShelfLifeDays` floor on FEFO composition; per-study do-not-dispense window applied by the dispensing query | `routes/shipments.test.ts` → "dispatches FEFO kits within the shelf-life floor..."; `routes/dispense.test.ts` → "respects the do-not-dispense window (ADR-0009)" |
+| SUP-05 | Supply surfaces do not leak the allocation | Blinded shipment list/manifest carry no kit-type identifier; type-naming surfaces (schemes, requests, composition) require `kit.manage` (ADR-0009 blinding classes) | `routes/shipments.test.ts` → "requires kit.manage to dispatch, and blinds the shipment surfaces"; `routes/resupply.test.ts` → "opens one request..." (403 for the coordinator) |
+
 ## Transfer record (E6(R3) §4.2.5, via edc-core ADR-0010)
 
 | ID | Requirement (plain language) | Enforced by | Proven by |

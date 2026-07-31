@@ -5,8 +5,10 @@ Supply Management (RTSM/IRT) system for clinical trials. It is the fourth
 sibling to `edc-core`, `ctms-core`, and `lims-core`. v0.1 covered
 randomization-list management and assignment delivery; v0.2 added sites,
 site-scoped grants, kit inventory, and blinded dispensing (ADR-0006); v0.3
-adds the emergency code-break (ADR-0007). Depot logic is roadmap. See
-`docs/plan.md` for the design and `docs/adr/` for the decisions.
+added the emergency code-break (ADR-0007); v0.4 adds depots, shipments, and
+threshold resupply (ADR-0009) — kits move only by shipment, and receipt is
+a blinded site-side act. See `docs/plan.md` for the design and `docs/adr/`
+for the decisions.
 
 ## The one hard rule
 

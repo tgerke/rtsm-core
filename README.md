@@ -39,8 +39,13 @@ with no private path.
   re-enters their password, records a reason, and sees the arm once. The
   append-only code-break row itself carries no arm, so blinded staff can see
   that a break happened without learning the allocation.
+- Runs the depot-to-site supply chain: kits import to a depot, move only by
+  shipment (first-expiry-first-out composition with a shelf-life floor), and
+  arrive through a blinded receiving step that dispositions every kit.
+  Per-site thresholds open resupply requests automatically; a pharmacist
+  decides what actually ships.
 
-Depot and resupply management are roadmap; see `docs/plan.md`.
+See `docs/plan.md` for the roadmap.
 
 ## Stack
 

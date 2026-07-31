@@ -31,10 +31,12 @@ concurrency-safe stratified allocation, and deliver each assignment to
 append-only transfer log on both sides.
 
 Supply: sites with site-scoped access, a kit-to-arm map visible only to the
-unblinded pharmacist role, shipment CSV imports with a trigger-audited kit
-lifecycle, and blinded dispensing — subject and site in, kit number out,
-with the arm resolved server-side and an append-only dispense log. Depot
-and resupply management is on the roadmap.
+unblinded pharmacist role, and blinded dispensing — subject and site in,
+kit number out, with the arm resolved server-side and an append-only
+dispense log. Kits import to a depot and move only by shipment: FEFO
+composition with a shelf-life floor, blinded site receipt that dispositions
+every kit, and threshold-triggered resupply requests that a pharmacist
+turns into shipments or dismisses with a reason.
 
 Emergencies: a medical monitor breaks the blind for one subject behind a
 password step-up and a recorded reason. The append-only code-break log shows
