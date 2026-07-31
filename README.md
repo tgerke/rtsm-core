@@ -35,9 +35,12 @@ with no private path.
   resolved server-side, selection is first-expiry-first-out, and every
   dispense lands in an append-only log.
 - Gates arm visibility by role and audits every unblinded read.
+- Breaks the blind for one subject in an emergency: a medical monitor
+  re-enters their password, records a reason, and sees the arm once. The
+  append-only code-break row itself carries no arm, so blinded staff can see
+  that a break happened without learning the allocation.
 
-Emergency code-break, depot, and resupply management are roadmap; see
-`docs/plan.md`.
+Depot and resupply management are roadmap; see `docs/plan.md`.
 
 ## Stack
 

@@ -48,7 +48,14 @@ access log, and roadmap at-rest protection of the arm column.
 
 ## Emergency unblinding
 
-Emergency code-break is still the EDC's existing break-the-blind action on
-the delivered arm item (ADR-0005). With dispensing and pharmacist users now
-in rtsm-core, the rtsm-side code-break is the next roadmap item, in the
-same step-up-plus-reason shape as list activation.
+rtsm-core provides the subject-level code-break (ADR-0007, superseding
+ADR-0005's deferral), in the same step-up-plus-reason shape as list
+activation. A `medical_monitor` — a role holding only `subject.codebreak` —
+re-enters their password and records a reason; the response carries the arm
+exactly once. The append-only `code_break` row records who, which subject,
+when, and why, with no arm; the exposure itself is the paired
+`unblinded_access` row written in the same transaction. Site-scoped grants
+reach only subjects randomized at that site.
+
+The EDC keeps its own break-the-blind on the delivered item. A deployment's
+SOPs must say which action is the emergency procedure.

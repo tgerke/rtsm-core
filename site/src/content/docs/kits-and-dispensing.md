@@ -74,9 +74,16 @@ If access is site-scoped, dispensing works only at the granted site.
 Dispensing does not touch the EDC; the intake carries arm assignments only
 (ADR-0006).
 
+## Emergency code-break
+
+With IP flowing through this system, the subject-level code-break lives here
+too (ADR-0007, superseding ADR-0005's deferral). A `medical_monitor` — a
+role that carries nothing else — re-enters their password, records a reason,
+and sees the subject's arm once. The append-only `code_break` row stays
+arm-free, so blinded staff can see who broke the blind for which subject and
+why; the arm exposure itself is the paired `unblinded_access` row written in
+the same transaction.
+
 ## Not here yet
 
-Emergency code-break is next on the roadmap now that dispensing exists
-(until then the EDC's break-the-blind action on the delivered arm is the
-emergency procedure, per ADR-0005). Depot management and automated resupply
-come after.
+Depot management and automated resupply are next on the roadmap.
