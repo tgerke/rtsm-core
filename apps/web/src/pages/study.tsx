@@ -6,12 +6,16 @@ import {
   type CodeBreakResult,
   type CodeBreakRow,
   type DeliveryRow,
+  type Depot,
   type DispenseResult,
   type DispenseRow,
   type KitRow,
   type KitTypeRow,
   type RandomizationList,
   type RandomizeResult,
+  type ResupplyRequestRow,
+  type ShipmentManifest,
+  type ShipmentRow,
   type Site,
 } from "../api.js";
 import { useStudy } from "../app.js";
@@ -46,7 +50,10 @@ export function StudyPage() {
       {permissions.includes("audit.review") && <CodeBreakLogCard />}
       <DeliveriesCard />
       <KitsCard />
+      <ShipmentsCard />
+      {permissions.includes("kit.manage") && <ResupplyCard />}
       {permissions.includes("kit.read_unblinded") && <KitTypesCard />}
+      {permissions.includes("kit.manage") && <DepotsCard />}
       <SitesCard />
     </>
   );
@@ -344,7 +351,7 @@ function KitsCard() {
               {unblinded && <th className="pb-2">Arm</th>}
               <th className="pb-2">Lot</th>
               <th className="pb-2">Expires</th>
-              <th className="pb-2">Site</th>
+              <th className="pb-2">Location</th>
               <th className="pb-2">Status</th>
               <th className="pb-2" />
             </tr>
@@ -357,7 +364,11 @@ function KitsCard() {
                 {unblinded && <td className="py-2">{kit.arm}</td>}
                 <td className="py-2">{kit.lot}</td>
                 <td className="py-2 text-slate-500">{kit.expiresOn}</td>
-                <td className="py-2 font-mono text-xs">{kit.siteCode ?? "—"}</td>
+                <td className="py-2 font-mono text-xs">
+                  {kit.siteCode ??
+                    kit.depotCode ??
+                    (kit.status === "in_transit" ? "in transit" : "—")}
+                </td>
                 <td className="py-2">
                   <StatusBadge status={kit.status} />
                   {kit.statusReason && (
@@ -365,11 +376,14 @@ function KitsCard() {
                   )}
                 </td>
                 <td className="py-2 text-right">
-                  {canManage && kit.status !== "dispensed" && (
-                    <Button variant="secondary" onClick={() => setEditing(kit)}>
-                      Update
-                    </Button>
-                  )}
+                  {canManage &&
+                    kit.status !== "dispensed" &&
+                    kit.status !== "in_transit" &&
+                    kit.status !== "lost" && (
+                      <Button variant="secondary" onClick={() => setEditing(kit)}>
+                        Update
+                      </Button>
+                    )}
                 </td>
               </tr>
             ))}
@@ -406,14 +420,14 @@ function KitsCard() {
 
 function ImportKitsModal({ onClose }: { onClose: () => void }) {
   const { study } = useStudy();
-  const sites = useSites();
+  const depots = useDepots();
   const [csv, setCsv] = useState("");
-  const [siteId, setSiteId] = useState("");
+  const [depotId, setDepotId] = useState("");
   const importKits = useMutation({
     mutationFn: () =>
       api(`/studies/${study.id}/kits`, {
         method: "POST",
-        body: JSON.stringify({ csv, ...(siteId ? { siteId } : {}) }),
+        body: JSON.stringify({ csv, depotId }),
       }),
     onSuccess: onClose,
   });
@@ -447,20 +461,24 @@ function ImportKitsModal({ onClose }: { onClose: () => void }) {
             placeholder={"kit_number,kit_type,lot,expiry\nK-0001,KT-A,LOT-1,2027-01-31"}
           />
         </Field>
-        <Field label="Ship to site" hint="Optional; kits can also be transferred later.">
-          <select className={inputClass} value={siteId} onChange={(e) => setSiteId(e.target.value)}>
-            <option value="">— not yet shipped —</option>
-            {(sites.data ?? [])
-              .filter((s) => s.status === "active")
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.code} — {s.name}
+        <Field label="Import to depot" hint="Kits reach sites only by shipment.">
+          <select
+            className={inputClass}
+            value={depotId}
+            onChange={(e) => setDepotId(e.target.value)}
+          >
+            <option value="">—</option>
+            {(depots.data ?? [])
+              .filter((d) => d.status === "active")
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.code} — {d.name}
                 </option>
               ))}
           </select>
         </Field>
         <ErrorNote message={importKits.error ? importKits.error.message : null} />
-        <Button type="submit" disabled={importKits.isPending || !csv}>
+        <Button type="submit" disabled={importKits.isPending || !csv || !depotId}>
           {importKits.isPending ? "Importing…" : "Import"}
         </Button>
       </form>
@@ -470,19 +488,13 @@ function ImportKitsModal({ onClose }: { onClose: () => void }) {
 
 function UpdateKitModal({ kit, onClose }: { kit: KitRow; onClose: () => void }) {
   const { study } = useStudy();
-  const sites = useSites();
   const [status, setStatus] = useState("");
-  const [siteId, setSiteId] = useState("");
   const [reason, setReason] = useState("");
   const update = useMutation({
     mutationFn: () =>
       api(`/studies/${study.id}/kits/${kit.id}`, {
         method: "PUT",
-        body: JSON.stringify({
-          ...(status ? { status } : {}),
-          ...(siteId ? { siteId } : {}),
-          reason,
-        }),
+        body: JSON.stringify({ status, reason }),
       }),
     onSuccess: onClose,
   });
@@ -495,24 +507,12 @@ function UpdateKitModal({ kit, onClose }: { kit: KitRow; onClose: () => void }) 
   return (
     <Modal title={`Update kit ${kit.kitNumber}`} onClose={onClose}>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Status" hint="Leave unchanged for a site transfer only.">
+        <Field label="Status" hint="Moving a kit takes a shipment; this changes only its state.">
           <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">— unchanged ({kit.status}) —</option>
+            <option value="">— currently {kit.status} —</option>
             <option value="available">available</option>
             <option value="quarantined">quarantined</option>
             <option value="damaged">damaged</option>
-          </select>
-        </Field>
-        <Field label="Transfer to site">
-          <select className={inputClass} value={siteId} onChange={(e) => setSiteId(e.target.value)}>
-            <option value="">— unchanged ({kit.siteCode ?? "not shipped"}) —</option>
-            {(sites.data ?? [])
-              .filter((s) => s.status === "active")
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.code} — {s.name}
-                </option>
-              ))}
           </select>
         </Field>
         <Field label="Reason" hint="Recorded on the kit and in the audit trail.">
@@ -523,7 +523,7 @@ function UpdateKitModal({ kit, onClose }: { kit: KitRow; onClose: () => void }) 
           />
         </Field>
         <ErrorNote message={update.error ? update.error.message : null} />
-        <Button type="submit" disabled={update.isPending || !reason || (!status && !siteId)}>
+        <Button type="submit" disabled={update.isPending || !reason || !status}>
           {update.isPending ? "Updating…" : "Update kit"}
         </Button>
       </form>
@@ -637,6 +637,14 @@ function useSites() {
   return useQuery({
     queryKey: ["sites", study.id],
     queryFn: () => api<Site[]>(`/studies/${study.id}/sites`),
+  });
+}
+
+function useDepots() {
+  const { study } = useStudy();
+  return useQuery({
+    queryKey: ["depots", study.id],
+    queryFn: () => api<Depot[]>(`/studies/${study.id}/depots`),
   });
 }
 
@@ -1145,6 +1153,481 @@ function DeliveriesCard() {
         This log reconciles against the EDC's rtsm_events transfer record. Arms are masked unless
         you hold unblinded access, and unblinded views are audited.
       </p>
+    </Card>
+  );
+}
+
+function DepotsCard() {
+  const { study } = useStudy();
+  const queryClient = useQueryClient();
+  const depots = useDepots();
+  const [showCreate, setShowCreate] = useState(false);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["depots", study.id] });
+
+  return (
+    <Card title="Depots" actions={<Button onClick={() => setShowCreate(true)}>Add depot</Button>}>
+      {depots.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Code</th>
+              <th className="pb-2">Name</th>
+              <th className="pb-2">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {depots.data.map((depot) => (
+              <tr key={depot.id}>
+                <td className="py-2 font-mono text-xs">{depot.code}</td>
+                <td className="py-2">{depot.name}</td>
+                <td className="py-2">
+                  <StatusBadge status={depot.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No depots yet. Kit batches import to a depot, and shipments carry them to sites.
+        </p>
+      )}
+      {showCreate && (
+        <CreateDepotModal
+          onClose={() => {
+            setShowCreate(false);
+            refresh();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CreateDepotModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const create = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/depots`, {
+        method: "POST",
+        body: JSON.stringify({ code, name }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Modal title="Add depot" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Code">
+          <input className={inputClass} value={code} onChange={(e) => setCode(e.target.value)} />
+        </Field>
+        <Field label="Name">
+          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <ErrorNote message={create.error ? create.error.message : null} />
+        <Button type="submit" disabled={create.isPending || !code || !name}>
+          {create.isPending ? "Adding…" : "Add depot"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function ShipmentsCard() {
+  const { study, permissions } = useStudy();
+  const queryClient = useQueryClient();
+  const shipments = useQuery({
+    queryKey: ["shipments", study.id],
+    queryFn: () => api<ShipmentRow[]>(`/studies/${study.id}/shipments`),
+  });
+  const [showCreate, setShowCreate] = useState(false);
+  const [receiving, setReceiving] = useState<ShipmentRow | null>(null);
+  const canDispatch = permissions.includes("kit.manage");
+  const canReceive = permissions.includes("shipment.receive");
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["shipments", study.id] });
+    queryClient.invalidateQueries({ queryKey: ["kits", study.id] });
+    queryClient.invalidateQueries({ queryKey: ["resupply-requests", study.id] });
+  };
+
+  return (
+    <Card
+      title="Shipments"
+      actions={
+        canDispatch ? <Button onClick={() => setShowCreate(true)}>New shipment</Button> : undefined
+      }
+    >
+      {shipments.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">From</th>
+              <th className="pb-2">To</th>
+              <th className="pb-2">Kits</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2">Dispatched</th>
+              <th className="pb-2" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {shipments.data.map((shipment) => (
+              <tr key={shipment.id}>
+                <td className="py-2 font-mono text-xs">{shipment.depotCode}</td>
+                <td className="py-2 font-mono text-xs">{shipment.siteCode}</td>
+                <td className="py-2">{shipment.kitCount}</td>
+                <td className="py-2">
+                  <StatusBadge status={shipment.status} />
+                </td>
+                <td className="py-2 text-slate-500">{formatDateTime(shipment.createdAt)}</td>
+                <td className="py-2 text-right">
+                  {canReceive && shipment.status === "in_transit" && (
+                    <Button variant="secondary" onClick={() => setReceiving(shipment)}>
+                      Receive
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No shipments yet.{" "}
+          {canDispatch
+            ? "Dispatch depot stock to a site; the destination confirms receipt kit by kit."
+            : "A pharmacist dispatches shipments; site staff receive them."}
+        </p>
+      )}
+      {showCreate && (
+        <CreateShipmentModal
+          onClose={() => {
+            setShowCreate(false);
+            refresh();
+          }}
+        />
+      )}
+      {receiving && (
+        <ReceiveShipmentModal
+          shipment={receiving}
+          onClose={() => {
+            setReceiving(null);
+            refresh();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CreateShipmentModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const depots = useDepots();
+  const sites = useSites();
+  // Composition names kit types, so this modal is a kit.manage surface; the
+  // unblinded types query feeds the pharmacist's selector.
+  const kitTypes = useQuery({
+    queryKey: ["kit-types", study.id],
+    queryFn: () => api<KitTypeRow[]>(`/studies/${study.id}/kit-types`),
+  });
+  const [depotId, setDepotId] = useState("");
+  const [siteId, setSiteId] = useState("");
+  const [minShelfLifeDays, setMinShelfLifeDays] = useState("0");
+  const [items, setItems] = useState<Array<{ kitTypeCode: string; quantity: string }>>([
+    { kitTypeCode: "", quantity: "1" },
+  ]);
+  const create = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/shipments`, {
+        method: "POST",
+        body: JSON.stringify({
+          depotId,
+          siteId,
+          minShelfLifeDays: Number(minShelfLifeDays) || 0,
+          items: items
+            .filter((i) => i.kitTypeCode)
+            .map((i) => ({ kitTypeCode: i.kitTypeCode, quantity: Number(i.quantity) || 1 })),
+        }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const setItem = (index: number, patch: Partial<{ kitTypeCode: string; quantity: string }>) =>
+    setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Modal title="New shipment" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="From depot">
+          <select
+            className={inputClass}
+            value={depotId}
+            onChange={(e) => setDepotId(e.target.value)}
+          >
+            <option value="">—</option>
+            {(depots.data ?? [])
+              .filter((d) => d.status === "active")
+              .map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.code} — {d.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <Field label="To site">
+          <select className={inputClass} value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+            <option value="">—</option>
+            {(sites.data ?? [])
+              .filter((s) => s.status === "active")
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <Field
+          label="Shelf-life floor (days)"
+          hint="Kits expiring within this many days stay off the truck."
+        >
+          <input
+            className={inputClass}
+            type="number"
+            min="0"
+            value={minShelfLifeDays}
+            onChange={(e) => setMinShelfLifeDays(e.target.value)}
+          />
+        </Field>
+        <Field label="Contents" hint="Quantities by kit type; the server picks the kits (FEFO).">
+          <div className="space-y-2">
+            {items.map((item, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+              <div key={index} className="flex gap-2">
+                <select
+                  className={inputClass}
+                  value={item.kitTypeCode}
+                  onChange={(e) => setItem(index, { kitTypeCode: e.target.value })}
+                >
+                  <option value="">— kit type —</option>
+                  {(kitTypes.data ?? []).map((t) => (
+                    <option key={t.id} value={t.code}>
+                      {t.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className={`${inputClass} w-24`}
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => setItem(index, { quantity: e.target.value })}
+                />
+              </div>
+            ))}
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setItems([...items, { kitTypeCode: "", quantity: "1" }])}
+            >
+              Add line
+            </Button>
+          </div>
+        </Field>
+        <ErrorNote message={create.error ? create.error.message : null} />
+        <Button
+          type="submit"
+          disabled={create.isPending || !depotId || !siteId || !items.some((i) => i.kitTypeCode)}
+        >
+          {create.isPending ? "Dispatching…" : "Dispatch"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function ReceiveShipmentModal({
+  shipment,
+  onClose,
+}: {
+  shipment: ShipmentRow;
+  onClose: () => void;
+}) {
+  const { study } = useStudy();
+  const manifest = useQuery({
+    queryKey: ["shipment", study.id, shipment.id],
+    queryFn: () => api<ShipmentManifest>(`/studies/${study.id}/shipments/${shipment.id}`),
+  });
+  const [dispositions, setDispositions] = useState<
+    Record<string, { disposition: string; reason: string }>
+  >({});
+  const receive = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/shipments/${shipment.id}/receive`, {
+        method: "POST",
+        body: JSON.stringify({
+          dispositions: (manifest.data?.kits ?? []).map((kit) => {
+            const d = dispositions[kit.kitNumber];
+            return {
+              kitNumber: kit.kitNumber,
+              disposition: d?.disposition ?? "received",
+              ...(d?.reason ? { reason: d.reason } : {}),
+            };
+          }),
+        }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const setKit = (kitNumber: string, patch: Partial<{ disposition: string; reason: string }>) =>
+    setDispositions({
+      ...dispositions,
+      [kitNumber]: {
+        disposition: dispositions[kitNumber]?.disposition ?? "received",
+        reason: dispositions[kitNumber]?.reason ?? "",
+        ...patch,
+      },
+    });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    receive.mutate();
+  };
+
+  return (
+    <Modal
+      title={`Receive shipment ${shipment.depotCode} → ${shipment.siteCode}`}
+      onClose={onClose}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <div className="space-y-2">
+          {(manifest.data?.kits ?? []).map((kit) => {
+            const d = dispositions[kit.kitNumber];
+            const needsReason = d && d.disposition !== "received";
+            return (
+              <div key={kit.kitNumber} className="flex flex-wrap items-center gap-2">
+                <span className="w-32 font-mono text-xs">{kit.kitNumber}</span>
+                <select
+                  className={`${inputClass} w-36`}
+                  value={d?.disposition ?? "received"}
+                  onChange={(e) => setKit(kit.kitNumber, { disposition: e.target.value })}
+                >
+                  <option value="received">received</option>
+                  <option value="damaged">damaged</option>
+                  <option value="missing">missing</option>
+                </select>
+                {needsReason && (
+                  <input
+                    className={`${inputClass} grow`}
+                    placeholder="Reason (required)"
+                    value={d?.reason ?? ""}
+                    onChange={(e) => setKit(kit.kitNumber, { reason: e.target.value })}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <ErrorNote message={receive.error ? receive.error.message : null} />
+        <Button type="submit" disabled={receive.isPending || !manifest.data}>
+          {receive.isPending ? "Receiving…" : "Confirm receipt"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function ResupplyCard() {
+  const { study } = useStudy();
+  const queryClient = useQueryClient();
+  const requests = useQuery({
+    queryKey: ["resupply-requests", study.id],
+    queryFn: () => api<ResupplyRequestRow[]>(`/studies/${study.id}/resupply-requests`),
+  });
+  const [dismissing, setDismissing] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const dismiss = useMutation({
+    mutationFn: (requestId: string) =>
+      api(`/studies/${study.id}/resupply-requests/${requestId}/dismiss`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }),
+    onSuccess: () => {
+      setDismissing(null);
+      setReason("");
+      queryClient.invalidateQueries({ queryKey: ["resupply-requests", study.id] });
+    },
+  });
+
+  return (
+    <Card title="Resupply requests (unblinded)">
+      {requests.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Site</th>
+              <th className="pb-2">Kit type</th>
+              <th className="pb-2">Qty</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2">Opened</th>
+              <th className="pb-2" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {requests.data.map((request) => (
+              <tr key={request.id}>
+                <td className="py-2 font-mono text-xs">{request.siteCode}</td>
+                <td className="py-2 font-mono text-xs">{request.kitTypeCode}</td>
+                <td className="py-2">{request.quantity}</td>
+                <td className="py-2">
+                  <StatusBadge status={request.status} />
+                </td>
+                <td className="py-2 text-slate-500">{formatDateTime(request.createdAt)}</td>
+                <td className="py-2 text-right">
+                  {request.status === "open" &&
+                    (dismissing === request.id ? (
+                      <span className="flex justify-end gap-2">
+                        <input
+                          className={`${inputClass} w-48`}
+                          placeholder="Reason"
+                          value={reason}
+                          onChange={(e) => setReason(e.target.value)}
+                        />
+                        <Button
+                          variant="secondary"
+                          onClick={() => dismiss.mutate(request.id)}
+                          disabled={dismiss.isPending || !reason}
+                        >
+                          Dismiss
+                        </Button>
+                      </span>
+                    ) : (
+                      <Button variant="secondary" onClick={() => setDismissing(request.id)}>
+                        Dismiss…
+                      </Button>
+                    ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          Nothing to resupply. Requests open automatically when a site's stock of a kit type falls
+          to its trigger level; answer one with a shipment, or dismiss it with a reason.
+        </p>
+      )}
+      <ErrorNote message={dismiss.error ? dismiss.error.message : null} />
     </Card>
   );
 }

@@ -76,12 +76,59 @@ export interface KitRow {
   kitNumber: string;
   lot: string;
   expiresOn: string;
-  status: "available" | "dispensed" | "damaged" | "quarantined";
+  status: "available" | "dispensed" | "damaged" | "quarantined" | "in_transit" | "lost";
   statusReason: string | null;
   siteCode: string | null;
+  depotCode: string | null;
   // Present only on the unblinded listing.
   kitTypeCode?: string;
   arm?: string;
+}
+
+export interface Depot {
+  id: string;
+  code: string;
+  name: string;
+  status: "active" | "closed";
+}
+
+export interface ShipmentRow {
+  id: string;
+  depotCode: string;
+  siteCode: string;
+  status: "in_transit" | "received";
+  kitCount: number;
+  createdAt: string;
+  receivedAt: string | null;
+}
+
+// Blinded manifest: no kit-type identifier anywhere.
+export interface ShipmentManifest {
+  id: string;
+  depotCode: string;
+  siteCode: string;
+  status: "in_transit" | "received";
+  minShelfLifeDays: number;
+  createdAt: string;
+  receivedAt: string | null;
+  kits: Array<{
+    kitNumber: string;
+    lot: string;
+    expiresOn: string;
+    disposition: "received" | "damaged" | "missing" | null;
+    dispositionReason: string | null;
+  }>;
+}
+
+// kit.manage-only surface: names kit types by design.
+export interface ResupplyRequestRow {
+  id: string;
+  siteCode: string;
+  kitTypeCode: string;
+  quantity: number;
+  status: "open" | "fulfilled" | "dismissed";
+  shipmentId: string | null;
+  createdAt: string;
 }
 
 export interface AssignmentRow {

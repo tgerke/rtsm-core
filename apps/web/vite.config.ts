@@ -8,7 +8,7 @@ const apiTarget = process.env.RTSM_API_PROXY ?? "http://localhost:3002";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5175,
+    port: Number(process.env.PORT) || 5175,
     proxy: {
       "/api": {
         target: apiTarget,

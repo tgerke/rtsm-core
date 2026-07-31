@@ -4,13 +4,22 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@rtsm-core/web", "dev"],
-      "port": 5175
+      "runtimeArgs": [
+        "--filter",
+        "@rtsm-core/web",
+        "dev"
+      ],
+      "port": 5175,
+      "autoPort": true
     },
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@rtsm-core/api", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@rtsm-core/api",
+        "dev"
+      ],
       "port": 3002
     }
   ]
