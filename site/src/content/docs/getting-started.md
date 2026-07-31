@@ -26,6 +26,9 @@ Sign in at `http://localhost:5175` with one of the demo accounts (password
   arms (administration does not unblind).
 - `pharma` — unblinded pharmacist; maintains the kit-to-arm map and site
   inventory, sees kit types and arms.
+- `medmon` — medical monitor; breaks the blind for one subject in an
+  emergency (password step-up plus a recorded reason), and holds nothing
+  else.
 
 ## Sites
 
