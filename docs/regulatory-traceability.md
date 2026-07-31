@@ -26,6 +26,14 @@ keep the "Proven by" column pointing at real test names.
 
 ## Blinding (E6(R3) Annex 1 §4.1, via edc-core ADR-0016)
 
+E6(R3) Annex 1 §3.16.1(g) expects sponsor procedures describing unblinding:
+"who were unblinded, at what timepoint and for what purpose", "who should
+remain blinded", and "the safeguards in place to preserve the blinding"
+(verified against the Step 4 final text, 2026-07-31). The rows below are
+that description enforced as schema: BL-02, BL-04, and BL-05 are the
+safeguards and the who-remains-blinded boundary; BL-03 and BL-07 record the
+who, when, and purpose of each exposure.
+
 | ID | Requirement (plain language) | Enforced by | Proven by |
 | --- | --- | --- | --- |
 | BL-01 | The master list is unreachable from the EDC | Separate application and database; integration only through the ADR-0010 intake | Architecture (edc-core ADR-0016); no EDC connection exists in this codebase |
