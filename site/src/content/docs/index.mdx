@@ -28,7 +28,10 @@ Randomization: import a statistician-generated list, activate it behind a
 password step-up with a recorded reason, randomize subjects with
 concurrency-safe stratified allocation, and deliver each assignment to
 [edc-core](https://github.com/tgerke/edc-core)'s RTSM intake with an
-append-only transfer log on both sides.
+append-only transfer log on both sides. Studies that can't be served by a
+list can opt into in-app Pocock–Simon minimization: a pure engine pinned by
+an R oracle, with an append-only draw record that replays every assignment
+exactly.
 
 Supply: sites with site-scoped access, a kit-to-arm map visible only to the
 unblinded pharmacist role, and blinded dispensing — subject and site in,

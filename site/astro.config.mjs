@@ -13,7 +13,7 @@ export default defineConfig({
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/tgerke/rtsm-core" }],
       sidebar: [
         { label: "Getting started", items: ["getting-started"] },
-        { label: "Integration", items: ["list-format", "edc-delivery"] },
+        { label: "Integration", items: ["list-format", "adaptive-randomization", "edc-delivery"] },
         { label: "Supply", items: ["kits-and-dispensing"] },
         { label: "Compliance", items: ["blinding", "audit"] },
       ],

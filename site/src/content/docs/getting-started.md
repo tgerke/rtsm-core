@@ -81,3 +81,22 @@ intake is idempotent.
 `pnpm check` runs lint, typecheck, and the test suite. The compliance tests
 need the Postgres container and run against a dedicated `rtsm_test` database
 so regulated (append-only) fixtures never pile up in your dev data.
+
+## Releases and containers
+
+Tagged releases (`vX.Y.Z`) publish container images to GHCR —
+`ghcr.io/tgerke/rtsm-core-api` and `ghcr.io/tgerke/rtsm-core-web` — and
+attach a validation pack: the regulatory traceability matrix joined to that
+tag's automated test results, so an adopter's validation can start from
+vendor evidence instead of re-deriving it. Regenerate it locally with
+`pnpm validation-pack` (needs the Postgres container).
+
+To run the containerized stack locally instead of `pnpm dev`:
+
+```bash
+podman compose -f infra/compose.yaml up -d
+```
+
+The API migrates the database at startup and serves on `:3002`; the web
+image serves the built SPA on `:5175` behind nginx, proxying `/api/*` to
+the API container.
