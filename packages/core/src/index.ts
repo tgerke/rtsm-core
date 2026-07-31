@@ -6,6 +6,8 @@ export * from "./errors.js";
 export * from "./kits.js";
 export * from "./lists.js";
 export * from "./masking.js";
+export * from "./methods.js";
+export * from "./minimize.js";
 export * from "./permissions.js";
 export * from "./randomize.js";
 export * from "./resupply.js";

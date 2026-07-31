@@ -112,8 +112,11 @@ describe("blinding and credentials never enter the audit trail", () => {
       sql`SELECT * FROM audit_event WHERE entity_id = ${list.id} AND action = 'randomization_list.insert'`,
     );
     expect((listEvents as unknown as unknown[]).length).toBe(1);
+    // Scoped to this list: generated entries elsewhere ARE row-audited
+    // (ADR-0008); uploaded imports must stay anchored by the file hash only.
     const entryEvents = await db.execute(
-      sql`SELECT * FROM audit_event WHERE entity_type = 'randomization_entry'`,
+      sql`SELECT * FROM audit_event WHERE entity_type = 'randomization_entry'
+          AND after ->> 'list_id' = ${list.id}`,
     );
     expect((entryEvents as unknown as unknown[]).length).toBe(0);
   });

@@ -84,25 +84,50 @@ anti-lock-in argument real.
 - **Do-not-dispense window** (ADR-0009, E6(R3) §3.15.3(c)(v)): a per-study
   number of days; kits expiring inside it stop being dispensable.
 
+## v0.5 scope (built)
+
+- **In-app covariate-adaptive randomization** (ADR-0008, amending
+  ADR-0001). A study may activate a *method* instead of a list: Pocock–Simon
+  minimization with the range metric, biased-coin p in [0.6, 0.95] (default
+  0.8), equal ratios, uniform factor weights with site as a default factor —
+  the statistician's decisions of 2026-07-31, recorded in
+  `docs/design/adaptive-randomization.md`.
+- **The engine is a pure TypeScript function** (`packages/core/src/minimize.ts`):
+  config, counts snapshot, covariates, and a counter-based uniform draw in;
+  scores, probabilities, and the chosen arm out. An R reference
+  implementation (`tools/minimization-reference.R`) generates golden vectors
+  the CI suite replays against the engine — the statistician reviews the R,
+  the runtime runs the TypeScript, the tests are the bridge.
+- **Materialize-on-assign.** An activated method owns a `generated`
+  randomization list; each adaptive assignment appends an entry and assigns
+  it in one serialized transaction (per-study advisory lock, counts
+  recomputed from full history in-transaction). `assignment.entry_id NOT
+  NULL UNIQUE` holds unchanged, so delivery, dispensing, and the code-break
+  needed no changes at all.
+- **The draw record** (`randomization_draw`, append-only): everything the
+  engine saw and produced, per assignment — the integrity anchor generated
+  entries need because they have no file hash (EMA computerised-systems
+  guideline A5.2.4). Draws and the study seed sit behind
+  `list.read_unblinded` with every read logged; the audit trail strips the
+  seed, the config (it names arms), and every arm-revealing draw column.
+- **One active source per study**: active uploaded list XOR active method,
+  enforced in the services and backstopped by a database trigger. Method
+  activation is the same GxP-significant act as list activation (password
+  step-up plus reason, P11-06).
+
 ## Roadmap
 
 Ordered by how the ADRs stage the work.
 
-1. **Covariate-adaptive randomization** (amends ADR-0001): ADR-0008
-   accepted 2026-07-31 — an in-process Pocock–Simon minimization engine
-   (range metric, biased-coin p default 0.8), opt-in per study. The
-   statistician's questions are answered and the regulatory checks
-   resolved in `docs/design/adaptive-randomization.md`; ready to build.
-   In-app generation of *static* lists remains a separate, conditional
-   question; uploading stays the default.
-2. **Validation pack + release mechanism**: port edc-core's
+1. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`
    publishing GHCR images.
-3. **At-rest protection of arms** (column-level encryption of
-   `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit)
-   and encrypted storage of the EDC key (ADR-0004).
-4. **Returns and destruction accountability**: E6(R3) §2.10.4 and
+2. **At-rest protection of arms** (column-level encryption of
+   `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit),
+   now also the study seed (ADR-0008 decision 8), and encrypted storage of
+   the EDC key (ADR-0004).
+3. **Returns and destruction accountability**: E6(R3) §2.10.4 and
    §3.15.3(c)(iii)–(iv) expect return/retrieval/disposition records;
    ADR-0009 ends at dispensing, and `dispensed`/`lost` stay terminal until
    a future ADR builds the return flow.

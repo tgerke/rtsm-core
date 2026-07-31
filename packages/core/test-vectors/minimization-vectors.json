@@ -1,0 +1,2602 @@
+[
+  {
+    "label": "two-arm, one factor, uniform weights - first subject",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 0
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 1,
+        "B": 1
+      },
+      "armProbabilities": {
+        "A": 0.5,
+        "B": 0.5
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 2, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 2
+        },
+        "II": {
+          "A": 1,
+          "B": 3
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 1,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 2, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 2
+        },
+        "II": {
+          "A": 1,
+          "B": 3
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 1,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 2, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 2
+        },
+        "II": {
+          "A": 1,
+          "B": 3
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 1,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 8, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 9,
+          "B": 8
+        },
+        "II": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2,
+        "B": 0
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 8, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 9,
+          "B": 8
+        },
+        "II": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2,
+        "B": 0
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 8, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 9,
+          "B": 8
+        },
+        "II": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2,
+        "B": 0
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 25, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 21,
+          "B": 29
+        },
+        "II": {
+          "A": 23,
+          "B": 19
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 7,
+        "B": 9
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 25, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 21,
+          "B": 29
+        },
+        "II": {
+          "A": 23,
+          "B": 19
+        }
+      }
+    },
+    "covariates": {
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 7,
+        "B": 9
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, one factor, uniform weights - lambda 25, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "stage",
+        "levels": ["I", "II"],
+        "weight": 1
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "stage": {
+        "I": {
+          "A": 21,
+          "B": 29
+        },
+        "II": {
+          "A": 23,
+          "B": 19
+        }
+      }
+    },
+    "covariates": {
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 5,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - first subject",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 0,
+          "B": 0
+        },
+        "S2": {
+          "A": 0,
+          "B": 0
+        },
+        "S3": {
+          "A": 0,
+          "B": 0
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 0
+        },
+        "III": {
+          "A": 0,
+          "B": 0
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2.5,
+        "B": 2.5
+      },
+      "armProbabilities": {
+        "A": 0.5,
+        "B": 0.5
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 2, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 2
+        },
+        "S3": {
+          "A": 0,
+          "B": 1
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 1,
+          "B": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 2
+        },
+        "III": {
+          "A": 2,
+          "B": 0
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 4,
+        "B": 1
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 2, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 2
+        },
+        "S3": {
+          "A": 0,
+          "B": 1
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 1,
+          "B": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 2
+        },
+        "III": {
+          "A": 2,
+          "B": 0
+        }
+      }
+    },
+    "covariates": {
+      "site": "S3",
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2,
+        "B": 7
+      },
+      "armProbabilities": {
+        "A": 0.8,
+        "B": 0.2
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 2, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 2
+        },
+        "S3": {
+          "A": 0,
+          "B": 1
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 1,
+          "B": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 2
+        },
+        "III": {
+          "A": 2,
+          "B": 0
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "III"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 6,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 8, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 9,
+          "B": 7
+        },
+        "S2": {
+          "A": 10,
+          "B": 5
+        },
+        "S3": {
+          "A": 5,
+          "B": 5
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 8
+        },
+        "II": {
+          "A": 7,
+          "B": 5
+        },
+        "III": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "III"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 7,
+        "B": 2
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 8, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 9,
+          "B": 7
+        },
+        "S2": {
+          "A": 10,
+          "B": 5
+        },
+        "S3": {
+          "A": 5,
+          "B": 5
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 8
+        },
+        "II": {
+          "A": 7,
+          "B": 5
+        },
+        "III": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "site": "S3",
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2.5,
+        "B": 2.5
+      },
+      "armProbabilities": {
+        "A": 0.5,
+        "B": 0.5
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 8, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 9,
+          "B": 7
+        },
+        "S2": {
+          "A": 10,
+          "B": 5
+        },
+        "S3": {
+          "A": 5,
+          "B": 5
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 8
+        },
+        "II": {
+          "A": 7,
+          "B": 5
+        },
+        "III": {
+          "A": 9,
+          "B": 8
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "I"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 3.5,
+        "B": 2.5
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 25, profile 1",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 25,
+          "B": 24
+        },
+        "S2": {
+          "A": 23,
+          "B": 24
+        },
+        "S3": {
+          "A": 22,
+          "B": 31
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 24
+        },
+        "II": {
+          "A": 22,
+          "B": 20
+        },
+        "III": {
+          "A": 19,
+          "B": 15
+        }
+      }
+    },
+    "covariates": {
+      "site": "S3",
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 10,
+        "B": 7
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 25, profile 2",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 25,
+          "B": 24
+        },
+        "S2": {
+          "A": 23,
+          "B": 24
+        },
+        "S3": {
+          "A": 22,
+          "B": 31
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 24
+        },
+        "II": {
+          "A": 22,
+          "B": 20
+        },
+        "III": {
+          "A": 19,
+          "B": 15
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 6,
+        "B": 3
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "two-arm, site + stage, site downweighted - lambda 25, profile 3",
+    "arms": ["A", "B"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2", "S3"],
+        "weight": 0.5
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III"],
+        "weight": 2
+      }
+    ],
+    "p": 0.8,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 25,
+          "B": 24
+        },
+        "S2": {
+          "A": 23,
+          "B": 24
+        },
+        "S3": {
+          "A": 22,
+          "B": 31
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 24
+        },
+        "II": {
+          "A": 22,
+          "B": 20
+        },
+        "III": {
+          "A": 19,
+          "B": 15
+        }
+      }
+    },
+    "covariates": {
+      "site": "S3",
+      "stage": "II"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 10,
+        "B": 7
+      },
+      "armProbabilities": {
+        "A": 0.2,
+        "B": 0.8
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - first subject",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 0,
+          "B": 0,
+          "C": 0
+        },
+        "M": {
+          "A": 0,
+          "B": 0,
+          "C": 0
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 0,
+          "B": 0,
+          "C": 0
+        },
+        "high": {
+          "A": 0,
+          "B": 0,
+          "C": 0
+        }
+      }
+    },
+    "covariates": {
+      "sex": "F",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2,
+        "B": 2,
+        "C": 2
+      },
+      "armProbabilities": {
+        "A": 0.333333333333333,
+        "B": 0.333333333333333,
+        "C": 0.333333333333333
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 2, profile 1",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 1,
+          "B": 3,
+          "C": 5
+        },
+        "M": {
+          "A": 4,
+          "B": 5,
+          "C": 1
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 1,
+          "B": 1,
+          "C": 6
+        },
+        "high": {
+          "A": 3,
+          "B": 2,
+          "C": 0
+        }
+      }
+    },
+    "covariates": {
+      "sex": "M",
+      "risk": "high"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 8,
+        "B": 8,
+        "C": 5
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 2, profile 2",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 1,
+          "B": 3,
+          "C": 5
+        },
+        "M": {
+          "A": 4,
+          "B": 5,
+          "C": 1
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 1,
+          "B": 1,
+          "C": 6
+        },
+        "high": {
+          "A": 3,
+          "B": 2,
+          "C": 0
+        }
+      }
+    },
+    "covariates": {
+      "sex": "M",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 9,
+        "B": 10,
+        "C": 9
+      },
+      "armProbabilities": {
+        "A": 0.35,
+        "B": 0.3,
+        "C": 0.35
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 2, profile 3",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 1,
+          "B": 3,
+          "C": 5
+        },
+        "M": {
+          "A": 4,
+          "B": 5,
+          "C": 1
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 1,
+          "B": 1,
+          "C": 6
+        },
+        "high": {
+          "A": 3,
+          "B": 2,
+          "C": 0
+        }
+      }
+    },
+    "covariates": {
+      "sex": "M",
+      "risk": "high"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 8,
+        "B": 8,
+        "C": 5
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 8, profile 1",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 6,
+          "B": 10,
+          "C": 6
+        },
+        "M": {
+          "A": 11,
+          "B": 7,
+          "C": 4
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 15,
+          "B": 8,
+          "C": 4
+        },
+        "high": {
+          "A": 9,
+          "B": 7,
+          "C": 6
+        }
+      }
+    },
+    "covariates": {
+      "sex": "F",
+      "risk": "high"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 8,
+        "B": 8,
+        "C": 6
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 8, profile 2",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 6,
+          "B": 10,
+          "C": 6
+        },
+        "M": {
+          "A": 11,
+          "B": 7,
+          "C": 4
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 15,
+          "B": 8,
+          "C": 4
+        },
+        "high": {
+          "A": 9,
+          "B": 7,
+          "C": 6
+        }
+      }
+    },
+    "covariates": {
+      "sex": "F",
+      "risk": "high"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 8,
+        "B": 8,
+        "C": 6
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 8, profile 3",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 6,
+          "B": 10,
+          "C": 6
+        },
+        "M": {
+          "A": 11,
+          "B": 7,
+          "C": 4
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 15,
+          "B": 8,
+          "C": 4
+        },
+        "high": {
+          "A": 9,
+          "B": 7,
+          "C": 6
+        }
+      }
+    },
+    "covariates": {
+      "sex": "F",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 16,
+        "B": 16,
+        "C": 14
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 25, profile 1",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 25,
+          "B": 30,
+          "C": 28
+        },
+        "M": {
+          "A": 26,
+          "B": 27,
+          "C": 17
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 35,
+          "B": 26,
+          "C": 34
+        },
+        "high": {
+          "A": 31,
+          "B": 19,
+          "C": 23
+        }
+      }
+    },
+    "covariates": {
+      "sex": "F",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 14,
+        "B": 14,
+        "C": 14
+      },
+      "armProbabilities": {
+        "A": 0.333333333333333,
+        "B": 0.333333333333333,
+        "C": 0.333333333333333
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 25, profile 2",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 25,
+          "B": 30,
+          "C": 28
+        },
+        "M": {
+          "A": 26,
+          "B": 27,
+          "C": 17
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 35,
+          "B": 26,
+          "C": 34
+        },
+        "high": {
+          "A": 31,
+          "B": 19,
+          "C": 23
+        }
+      }
+    },
+    "covariates": {
+      "sex": "M",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 20,
+        "B": 19,
+        "C": 18
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "three-arm, two factors - lambda 25, profile 3",
+    "arms": ["A", "B", "C"],
+    "factors": [
+      {
+        "name": "sex",
+        "levels": ["F", "M"],
+        "weight": 1
+      },
+      {
+        "name": "risk",
+        "levels": ["low", "high"],
+        "weight": 1
+      }
+    ],
+    "p": 0.7,
+    "counts": {
+      "sex": {
+        "F": {
+          "A": 25,
+          "B": 30,
+          "C": 28
+        },
+        "M": {
+          "A": 26,
+          "B": 27,
+          "C": 17
+        }
+      },
+      "risk": {
+        "low": {
+          "A": 35,
+          "B": 26,
+          "C": 34
+        },
+        "high": {
+          "A": 31,
+          "B": 19,
+          "C": 23
+        }
+      }
+    },
+    "covariates": {
+      "sex": "M",
+      "risk": "low"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 20,
+        "B": 19,
+        "C": 18
+      },
+      "armProbabilities": {
+        "A": 0.15,
+        "B": 0.15,
+        "C": 0.7
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - first subject",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "S2": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "II": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "III": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "IV": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "1": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        },
+        "2": {
+          "A": 0,
+          "B": 0,
+          "C": 0,
+          "D": 0
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "I",
+      "ecog": "0"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 2.75,
+        "B": 2.75,
+        "C": 2.75,
+        "D": 2.75
+      },
+      "armProbabilities": {
+        "A": 0.25,
+        "B": 0.25,
+        "C": 0.25,
+        "D": 0.25
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 2, profile 1",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 1,
+          "C": 0,
+          "D": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 3,
+          "C": 1,
+          "D": 3
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 1,
+          "C": 4,
+          "D": 3
+        },
+        "II": {
+          "A": 2,
+          "B": 3,
+          "C": 0,
+          "D": 4
+        },
+        "III": {
+          "A": 0,
+          "B": 3,
+          "C": 0,
+          "D": 1
+        },
+        "IV": {
+          "A": 4,
+          "B": 1,
+          "C": 2,
+          "D": 2
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 0,
+          "B": 2,
+          "C": 3,
+          "D": 2
+        },
+        "1": {
+          "A": 1,
+          "B": 3,
+          "C": 4,
+          "D": 1
+        },
+        "2": {
+          "A": 4,
+          "B": 5,
+          "C": 1,
+          "D": 2
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "I",
+      "ecog": "1"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 7.25,
+        "B": 9.75,
+        "C": 10.5,
+        "D": 9.75
+      },
+      "armProbabilities": {
+        "A": 0.95,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.0166666666666667
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 2, profile 2",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 1,
+          "C": 0,
+          "D": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 3,
+          "C": 1,
+          "D": 3
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 1,
+          "C": 4,
+          "D": 3
+        },
+        "II": {
+          "A": 2,
+          "B": 3,
+          "C": 0,
+          "D": 4
+        },
+        "III": {
+          "A": 0,
+          "B": 3,
+          "C": 0,
+          "D": 1
+        },
+        "IV": {
+          "A": 4,
+          "B": 1,
+          "C": 2,
+          "D": 2
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 0,
+          "B": 2,
+          "C": 3,
+          "D": 2
+        },
+        "1": {
+          "A": 1,
+          "B": 3,
+          "C": 4,
+          "D": 1
+        },
+        "2": {
+          "A": 4,
+          "B": 5,
+          "C": 1,
+          "D": 2
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "I",
+      "ecog": "1"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 7.25,
+        "B": 8.75,
+        "C": 9.5,
+        "D": 9.75
+      },
+      "armProbabilities": {
+        "A": 0.95,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.0166666666666667
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 2, profile 3",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 1,
+          "B": 1,
+          "C": 0,
+          "D": 2
+        },
+        "S2": {
+          "A": 1,
+          "B": 3,
+          "C": 1,
+          "D": 3
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 0,
+          "B": 1,
+          "C": 4,
+          "D": 3
+        },
+        "II": {
+          "A": 2,
+          "B": 3,
+          "C": 0,
+          "D": 4
+        },
+        "III": {
+          "A": 0,
+          "B": 3,
+          "C": 0,
+          "D": 1
+        },
+        "IV": {
+          "A": 4,
+          "B": 1,
+          "C": 2,
+          "D": 2
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 0,
+          "B": 2,
+          "C": 3,
+          "D": 2
+        },
+        "1": {
+          "A": 1,
+          "B": 3,
+          "C": 4,
+          "D": 1
+        },
+        "2": {
+          "A": 4,
+          "B": 5,
+          "C": 1,
+          "D": 2
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "IV",
+      "ecog": "0"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 8.5,
+        "B": 5.75,
+        "C": 6.5,
+        "D": 8.25
+      },
+      "armProbabilities": {
+        "A": 0.0166666666666667,
+        "B": 0.95,
+        "C": 0.0166666666666667,
+        "D": 0.0166666666666667
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 8, profile 1",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 7,
+          "B": 7,
+          "C": 9,
+          "D": 6
+        },
+        "S2": {
+          "A": 5,
+          "B": 9,
+          "C": 5,
+          "D": 15
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 9,
+          "C": 10,
+          "D": 10
+        },
+        "II": {
+          "A": 12,
+          "B": 6,
+          "C": 9,
+          "D": 5
+        },
+        "III": {
+          "A": 12,
+          "B": 7,
+          "C": 12,
+          "D": 4
+        },
+        "IV": {
+          "A": 8,
+          "B": 5,
+          "C": 11,
+          "D": 6
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 12,
+          "B": 8,
+          "C": 7,
+          "D": 6
+        },
+        "1": {
+          "A": 15,
+          "B": 4,
+          "C": 6,
+          "D": 3
+        },
+        "2": {
+          "A": 10,
+          "B": 9,
+          "C": 6,
+          "D": 10
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "I",
+      "ecog": "1"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 14.75,
+        "B": 16,
+        "C": 17.5,
+        "D": 18.25
+      },
+      "armProbabilities": {
+        "A": 0.95,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.0166666666666667
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 8, profile 2",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 7,
+          "B": 7,
+          "C": 9,
+          "D": 6
+        },
+        "S2": {
+          "A": 5,
+          "B": 9,
+          "C": 5,
+          "D": 15
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 9,
+          "C": 10,
+          "D": 10
+        },
+        "II": {
+          "A": 12,
+          "B": 6,
+          "C": 9,
+          "D": 5
+        },
+        "III": {
+          "A": 12,
+          "B": 7,
+          "C": 12,
+          "D": 4
+        },
+        "IV": {
+          "A": 8,
+          "B": 5,
+          "C": 11,
+          "D": 6
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 12,
+          "B": 8,
+          "C": 7,
+          "D": 6
+        },
+        "1": {
+          "A": 15,
+          "B": 4,
+          "C": 6,
+          "D": 3
+        },
+        "2": {
+          "A": 10,
+          "B": 9,
+          "C": 6,
+          "D": 10
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "III",
+      "ecog": "2"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 17.75,
+        "B": 16,
+        "C": 18.25,
+        "D": 13.75
+      },
+      "armProbabilities": {
+        "A": 0.0166666666666667,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.95
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 8, profile 3",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 7,
+          "B": 7,
+          "C": 9,
+          "D": 6
+        },
+        "S2": {
+          "A": 5,
+          "B": 9,
+          "C": 5,
+          "D": 15
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 8,
+          "B": 9,
+          "C": 10,
+          "D": 10
+        },
+        "II": {
+          "A": 12,
+          "B": 6,
+          "C": 9,
+          "D": 5
+        },
+        "III": {
+          "A": 12,
+          "B": 7,
+          "C": 12,
+          "D": 4
+        },
+        "IV": {
+          "A": 8,
+          "B": 5,
+          "C": 11,
+          "D": 6
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 12,
+          "B": 8,
+          "C": 7,
+          "D": 6
+        },
+        "1": {
+          "A": 15,
+          "B": 4,
+          "C": 6,
+          "D": 3
+        },
+        "2": {
+          "A": 10,
+          "B": 9,
+          "C": 6,
+          "D": 10
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "II",
+      "ecog": "2"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 23.25,
+        "B": 21.5,
+        "C": 21.25,
+        "D": 21.25
+      },
+      "armProbabilities": {
+        "A": 0.025,
+        "B": 0.025,
+        "C": 0.475,
+        "D": 0.475
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 25, profile 1",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 14,
+          "B": 25,
+          "C": 26,
+          "D": 26
+        },
+        "S2": {
+          "A": 21,
+          "B": 25,
+          "C": 27,
+          "D": 25
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 25,
+          "C": 28,
+          "D": 21
+        },
+        "II": {
+          "A": 23,
+          "B": 31,
+          "C": 19,
+          "D": 36
+        },
+        "III": {
+          "A": 15,
+          "B": 24,
+          "C": 34,
+          "D": 26
+        },
+        "IV": {
+          "A": 23,
+          "B": 26,
+          "C": 22,
+          "D": 33
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 32,
+          "B": 19,
+          "C": 21,
+          "D": 34
+        },
+        "1": {
+          "A": 24,
+          "B": 26,
+          "C": 28,
+          "D": 32
+        },
+        "2": {
+          "A": 23,
+          "B": 29,
+          "C": 30,
+          "D": 19
+        }
+      }
+    },
+    "covariates": {
+      "site": "S1",
+      "stage": "I",
+      "ecog": "0"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 35.75,
+        "B": 35,
+        "C": 36.25,
+        "D": 35
+      },
+      "armProbabilities": {
+        "A": 0.025,
+        "B": 0.475,
+        "C": 0.025,
+        "D": 0.475
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 25, profile 2",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 14,
+          "B": 25,
+          "C": 26,
+          "D": 26
+        },
+        "S2": {
+          "A": 21,
+          "B": 25,
+          "C": 27,
+          "D": 25
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 25,
+          "C": 28,
+          "D": 21
+        },
+        "II": {
+          "A": 23,
+          "B": 31,
+          "C": 19,
+          "D": 36
+        },
+        "III": {
+          "A": 15,
+          "B": 24,
+          "C": 34,
+          "D": 26
+        },
+        "IV": {
+          "A": 23,
+          "B": 26,
+          "C": 22,
+          "D": 33
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 32,
+          "B": 19,
+          "C": 21,
+          "D": 34
+        },
+        "1": {
+          "A": 24,
+          "B": 26,
+          "C": 28,
+          "D": 32
+        },
+        "2": {
+          "A": 23,
+          "B": 29,
+          "C": 30,
+          "D": 19
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "I",
+      "ecog": "2"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 28.75,
+        "B": 28.25,
+        "C": 29.5,
+        "D": 26.5
+      },
+      "armProbabilities": {
+        "A": 0.0166666666666667,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.95
+      }
+    }
+  },
+  {
+    "label": "four-arm, three factors, mixed weights, p at bounds - lambda 25, profile 3",
+    "arms": ["A", "B", "C", "D"],
+    "factors": [
+      {
+        "name": "site",
+        "levels": ["S1", "S2"],
+        "weight": 1
+      },
+      {
+        "name": "stage",
+        "levels": ["I", "II", "III", "IV"],
+        "weight": 1.5
+      },
+      {
+        "name": "ecog",
+        "levels": ["0", "1", "2"],
+        "weight": 0.25
+      }
+    ],
+    "p": 0.95,
+    "counts": {
+      "site": {
+        "S1": {
+          "A": 14,
+          "B": 25,
+          "C": 26,
+          "D": 26
+        },
+        "S2": {
+          "A": 21,
+          "B": 25,
+          "C": 27,
+          "D": 25
+        }
+      },
+      "stage": {
+        "I": {
+          "A": 34,
+          "B": 25,
+          "C": 28,
+          "D": 21
+        },
+        "II": {
+          "A": 23,
+          "B": 31,
+          "C": 19,
+          "D": 36
+        },
+        "III": {
+          "A": 15,
+          "B": 24,
+          "C": 34,
+          "D": 26
+        },
+        "IV": {
+          "A": 23,
+          "B": 26,
+          "C": 22,
+          "D": 33
+        }
+      },
+      "ecog": {
+        "0": {
+          "A": 32,
+          "B": 19,
+          "C": 21,
+          "D": 34
+        },
+        "1": {
+          "A": 24,
+          "B": 26,
+          "C": 28,
+          "D": 32
+        },
+        "2": {
+          "A": 23,
+          "B": 29,
+          "C": 30,
+          "D": 19
+        }
+      }
+    },
+    "covariates": {
+      "site": "S2",
+      "stage": "IV",
+      "ecog": "2"
+    },
+    "expected": {
+      "imbalanceScores": {
+        "A": 24.25,
+        "B": 25.25,
+        "C": 25,
+        "D": 26.5
+      },
+      "armProbabilities": {
+        "A": 0.95,
+        "B": 0.0166666666666667,
+        "C": 0.0166666666666667,
+        "D": 0.0166666666666667
+      }
+    }
+  }
+]

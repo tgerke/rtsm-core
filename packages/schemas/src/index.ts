@@ -177,6 +177,57 @@ export const listActivateSchema = z.object({
 export type ListActivateRequest = z.infer<typeof listActivateSchema>;
 
 // ---------------------------------------------------------------------------
+// Adaptive randomization methods (ADR-0008)
+// ---------------------------------------------------------------------------
+
+// Pocock–Simon minimization config. v1 is deliberately narrow: one method,
+// the range metric only, equal allocation ratios (design decisions 1, 6).
+// weight defaults to uniform and p to 0.8 (decisions 2, 3); p is bounded
+// away from 1 as a blinding control (ICH E9 §2.3.2, FDA adaptive guidance
+// §V.E — deterministic dynamic allocation must be avoided).
+export const minimizationConfigSchema = z
+  .object({
+    method: z.literal("pocock-simon"),
+    imbalanceMetric: z.literal("range"),
+    arms: z.array(z.string().min(1).max(500)).min(2).max(20),
+    factors: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(200),
+          levels: z.array(z.string().min(1).max(200)).min(2).max(100),
+          weight: z.number().positive().max(1000).default(1),
+        }),
+      )
+      .min(1)
+      .max(20),
+    p: z.number().min(0.6).max(0.95).default(0.8),
+  })
+  .refine((c) => new Set(c.arms).size === c.arms.length, { message: "arms must be unique" })
+  .refine((c) => new Set(c.factors.map((f) => f.name)).size === c.factors.length, {
+    message: "factor names must be unique",
+  })
+  .refine((c) => c.factors.every((f) => new Set(f.levels).size === f.levels.length), {
+    message: "factor levels must be unique",
+  });
+export type MinimizationConfigRequest = z.infer<typeof minimizationConfigSchema>;
+
+export const methodCreateSchema = z.object({
+  config: minimizationConfigSchema,
+  // Statistician-supplied seed (decision 8); the server generates one from
+  // a CSPRNG when absent. Never serialized back outside list.read_unblinded.
+  seed: z.string().min(16).max(128).optional(),
+});
+export type MethodCreateRequest = z.infer<typeof methodCreateSchema>;
+
+// Method activation is the same GxP-significant act as list activation:
+// password step-up plus a captured reason (P11-06).
+export const methodActivateSchema = z.object({
+  password: z.string().min(1),
+  reason: z.string().min(1).max(1000),
+});
+export type MethodActivateRequest = z.infer<typeof methodActivateSchema>;
+
+// ---------------------------------------------------------------------------
 // Randomization
 // ---------------------------------------------------------------------------
 

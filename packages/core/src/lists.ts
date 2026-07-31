@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { randomizationEntries, randomizationLists } from "@rtsm-core/db";
+import { randomizationEntries, randomizationLists, randomizationMethods } from "@rtsm-core/db";
 import { and, eq, max } from "drizzle-orm";
 import type { Tx } from "./actor.js";
 import { DomainError } from "./errors.js";
@@ -112,11 +112,24 @@ export async function activateList(
     throw new DomainError(`list is ${list.status}; only a draft can be activated`, 409);
   }
 
+  // One active source (ADR-0008): activating a list retires whatever the
+  // study ran on before — the prior list (uploaded or generated) and any
+  // active method. The rtsm_one_active_source trigger backstops this.
+  const now = new Date();
   await tx
     .update(randomizationLists)
-    .set({ status: "retired", retiredAt: new Date() })
+    .set({ status: "retired", retiredAt: now })
     .where(
       and(eq(randomizationLists.studyId, input.studyId), eq(randomizationLists.status, "active")),
+    );
+  await tx
+    .update(randomizationMethods)
+    .set({ status: "retired", retiredAt: now })
+    .where(
+      and(
+        eq(randomizationMethods.studyId, input.studyId),
+        eq(randomizationMethods.status, "active"),
+      ),
     );
 
   const [activated] = await tx

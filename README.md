@@ -44,6 +44,12 @@ with no private path.
   arrive through a blinded receiving step that dispositions every kit.
   Per-site thresholds open resupply requests automatically; a pharmacist
   decides what actually ships.
+- Computes covariate-adaptive assignments in-app where no list can exist:
+  Pocock–Simon minimization as an opt-in per-study method, activated with
+  the same re-authentication step as a list. Every assignment persists a
+  draw record that replays exactly, and the engine is cross-validated in CI
+  against an R reference implementation the statistician can review.
+  Uploaded lists remain the default.
 
 See `docs/plan.md` for the roadmap.
 

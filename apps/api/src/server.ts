@@ -10,6 +10,7 @@ import { depotRoutes } from "./routes/depots.js";
 import { dispenseRoutes } from "./routes/dispense.js";
 import { kitRoutes } from "./routes/kits.js";
 import { listRoutes } from "./routes/lists.js";
+import { methodRoutes } from "./routes/methods.js";
 import { randomizeRoutes } from "./routes/randomize.js";
 import { resupplyRoutes } from "./routes/resupply.js";
 import { shipmentRoutes } from "./routes/shipments.js";
@@ -49,6 +50,7 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   await server.register(resupplyRoutes);
   await server.register(dispenseRoutes);
   await server.register(listRoutes);
+  await server.register(methodRoutes);
   await server.register(randomizeRoutes);
   await server.register(codeBreakRoutes);
   await server.register(deliveryRoutes);

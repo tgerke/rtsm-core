@@ -1,14 +1,17 @@
-import { assignments, randomizationLists, sites } from "@rtsm-core/db";
+import { assignments, randomizationLists, randomizationMethods, sites } from "@rtsm-core/db";
 import { and, eq, sql } from "drizzle-orm";
 import type { Tx } from "./actor.js";
 import { DomainError } from "./errors.js";
+import { randomizeAdaptive } from "./methods.js";
 
 /**
- * Allocates the next unused entry in the subject's stratum and records the
- * assignment. Concurrency-safe: the entry row is taken with
- * FOR UPDATE SKIP LOCKED, so two simultaneous randomizations get distinct
- * entries, and the schema backstops the logic (entry_id UNIQUE, one
- * assignment per (study, subject)). Must run inside withActor.
+ * Randomizes a subject from the study's active source (ADR-0008: active
+ * uploaded list XOR active method). The list path allocates the next unused
+ * entry in the subject's stratum; the method path computes the assignment
+ * (methods.ts) and materializes it as a generated entry — either way an
+ * entry row backs the assignment, and the schema backstops the logic
+ * (entry_id UNIQUE, one assignment per (study, subject)). Must run inside
+ * withActor.
  *
  * Returns the assignment only — never the arm. The arm leaves this system
  * exclusively through the delivery client (to the EDC's blinded item) and
@@ -27,24 +30,17 @@ export async function randomizeSubject(
 ) {
   const stratum = input.stratum ?? "";
 
+  let siteCode: string | undefined;
   if (input.siteId) {
     const [site] = await tx
-      .select({ status: sites.status })
+      .select({ status: sites.status, code: sites.code })
       .from(sites)
       .where(and(eq(sites.id, input.siteId), eq(sites.studyId, input.studyId)))
       .limit(1);
     if (!site) throw new DomainError("site not found in this study", 404);
     if (site.status !== "active") throw new DomainError("site is closed", 409);
+    siteCode = site.code;
   }
-
-  const [active] = await tx
-    .select()
-    .from(randomizationLists)
-    .where(
-      and(eq(randomizationLists.studyId, input.studyId), eq(randomizationLists.status, "active")),
-    )
-    .limit(1);
-  if (!active) throw new DomainError("study has no active randomization list", 409);
 
   const [existing] = await tx
     .select({ id: assignments.id })
@@ -54,6 +50,36 @@ export async function randomizeSubject(
     )
     .limit(1);
   if (existing) throw new DomainError("subject is already randomized", 409);
+
+  const [activeMethod] = await tx
+    .select()
+    .from(randomizationMethods)
+    .where(
+      and(
+        eq(randomizationMethods.studyId, input.studyId),
+        eq(randomizationMethods.status, "active"),
+      ),
+    )
+    .limit(1);
+  if (activeMethod) {
+    return randomizeAdaptive(tx, activeMethod, {
+      studyId: input.studyId,
+      subjectKey: input.subjectKey,
+      covariates: input.strata ?? {},
+      ...(siteCode !== undefined ? { siteCode } : {}),
+      ...(input.siteId !== undefined ? { siteId: input.siteId } : {}),
+      createdBy: input.createdBy,
+    });
+  }
+
+  const [active] = await tx
+    .select()
+    .from(randomizationLists)
+    .where(
+      and(eq(randomizationLists.studyId, input.studyId), eq(randomizationLists.status, "active")),
+    )
+    .limit(1);
+  if (!active) throw new DomainError("study has no active randomization list or method", 409);
 
   const locked = await tx.execute(sql`
     SELECT e.id FROM randomization_entry e

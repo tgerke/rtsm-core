@@ -1,9 +1,9 @@
 # Design: in-app covariate-adaptive randomization
 
-Status: accepted design, paired with ADR-0008 (accepted 2026-07-31).
-Nothing here is built yet; this document made the decision to build it on
-the record, with the statistician's questions answered first — the answers
-and the regulatory verification are recorded below.
+Status: accepted design, paired with ADR-0008 (accepted 2026-07-31) and
+built in v0.5. This document made the decision to build it on the record,
+with the statistician's questions answered first — the answers and the
+regulatory verification are recorded below.
 
 ## Purpose and scope
 

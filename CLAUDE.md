@@ -5,10 +5,12 @@ Supply Management (RTSM/IRT) system for clinical trials. It is the fourth
 sibling to `edc-core`, `ctms-core`, and `lims-core`. v0.1 covered
 randomization-list management and assignment delivery; v0.2 added sites,
 site-scoped grants, kit inventory, and blinded dispensing (ADR-0006); v0.3
-added the emergency code-break (ADR-0007); v0.4 adds depots, shipments, and
-threshold resupply (ADR-0009) — kits move only by shipment, and receipt is
-a blinded site-side act. See `docs/plan.md` for the design and `docs/adr/`
-for the decisions.
+added the emergency code-break (ADR-0007); v0.4 added depots, shipments, and
+threshold resupply (ADR-0009); v0.5 adds in-app covariate-adaptive
+randomization (ADR-0008) — Pocock–Simon minimization as an opt-in per-study
+method, a pure engine cross-validated against an R oracle, and an
+append-only draw record that replays every assignment exactly. See
+`docs/plan.md` for the design and `docs/adr/` for the decisions.
 
 ## The one hard rule
 
@@ -35,7 +37,7 @@ why this boundary exists.
   (`APP_DATABASE_URL`).
 - **Regulated rows are append-only, so tests can't self-clean.**
   `audit_event`, `randomization_entry`, `assignment`, `delivery_event`,
-  `dispense_event`, `code_break`, and `unblinded_access` reject
+  `dispense_event`, `code_break`, `randomization_draw`, and `unblinded_access` reject
   UPDATE/DELETE by trigger.
   Test fixtures use unique suffixes (`test-helpers.ts`) instead of teardown.
 - **Every audited write goes through `withActor`.** The audit trigger reads
@@ -50,9 +52,16 @@ why this boundary exists.
   arm, even the code leaks. Never add a route or serializer that exposes an
   arm without going through the masking helpers.
 - **List activation requires re-authentication.** Activating a randomization
-  list re-verifies the actor's password and captures a reason (ADR: activation
-  is the GxP-significant act here). An OIDC-only account with no local
-  password cannot activate.
+  list — or an adaptive method (ADR-0008) — re-verifies the actor's password
+  and captures a reason (ADR: activation is the GxP-significant act here). An
+  OIDC-only account with no local password cannot activate.
+- **The minimization engine is pinned by an R oracle.** Changing
+  `packages/core/src/minimize.ts` must keep the committed golden vectors
+  green; regenerating them (`Rscript tools/minimization-reference.R`) is a
+  statistician-approved algorithm change, not a refactor, and invalidates
+  exact replay of historical draws — bump `ENGINE_VERSION`. The method seed
+  and every draw-record content column are blinded: they serialize only on
+  the `/methods/:id/unblinded` route and are stripped from audit snapshots.
 - **Schema lives in two places.** Hand-written SQL migrations own triggers,
   views, and roles; Drizzle table defs (`packages/db/src/schema`) mirror the
   columns for the query layer. Change both, keep them in sync.

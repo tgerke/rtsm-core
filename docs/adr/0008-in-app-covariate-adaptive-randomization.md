@@ -94,5 +94,5 @@ exactly one method, and proposes the terms.
   and seed). The `[VERIFY]` regulatory markers were resolved against
   source text the same day (design doc, validation evidence). Both
   acceptance conditions are met.
-- Acceptance re-stages the roadmap: depot/resupply shipped in v0.4, so
-  this is the next build (docs/plan.md, roadmap item 1).
+- Acceptance re-staged the roadmap: depot/resupply shipped in v0.4, and
+  this build shipped as v0.5 (docs/plan.md).
