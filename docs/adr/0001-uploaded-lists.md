@@ -1,6 +1,7 @@
 # ADR-0001: Randomization lists are uploaded, not generated in-app
 
-Status: accepted (2026-07-23)
+Status: accepted (2026-07-23). Amendment proposed by ADR-0008, scoped to
+opt-in covariate-adaptive generation; uploading remains the default.
 
 ## Context
 

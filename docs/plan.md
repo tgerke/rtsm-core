@@ -71,8 +71,12 @@ anti-lock-in argument real.
 Ordered by how the ADRs stage the work.
 
 1. **Depot and resupply logistics.**
-2. **In-app list generation** (revisits ADR-0001) only if a validated
-   in-house generator earns its place; uploading stays the default.
+2. **Covariate-adaptive randomization** (amends ADR-0001): a design spike
+   exists — `docs/design/adaptive-randomization.md` and ADR-0008 (proposed)
+   — proposing an in-process Pocock–Simon minimization engine, opt-in per
+   study. Blocked on the statistician's open questions and `[VERIFY]`
+   regulatory checks recorded there. In-app generation of *static* lists
+   remains a separate, conditional question; uploading stays the default.
 3. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`
