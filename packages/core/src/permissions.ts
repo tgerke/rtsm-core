@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   "kit.manage",
   "kit.dispense",
   "kit.read_unblinded",
+  "shipment.receive",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

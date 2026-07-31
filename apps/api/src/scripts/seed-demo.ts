@@ -2,6 +2,7 @@ import { activateList, importList, withActor } from "@rtsm-core/core";
 import {
   createDb,
   databaseUrl,
+  depots,
   kits,
   kitTypes,
   roles,
@@ -92,6 +93,12 @@ try {
       ])
       .returning();
 
+    const [depot] = await tx
+      .insert(depots)
+      .values({ studyId: study.id, code: "DEPOT-001", name: "Central Depot" })
+      .returning();
+    if (!depot) throw new Error("depot seed failed");
+
     // Three kits of each type at each site, staggered expiry so FEFO
     // selection is visible in the demo.
     const expiries = ["2026-12-31", "2027-06-30", "2027-12-31"];
@@ -108,6 +115,20 @@ try {
             createdBy: userId("pharma"),
           })),
         ),
+      ),
+    );
+    // Depot stock so the demo can dispatch shipments (ADR-0009).
+    await tx.insert(kits).values(
+      seededTypes.flatMap((type, t) =>
+        expiries.map((expiresOn, e) => ({
+          studyId: study.id,
+          kitTypeId: type.id,
+          kitNumber: `K-D${t + 1}${e + 1}0`,
+          lot: `LOT-2026-${t + 1}`,
+          expiresOn,
+          depotId: depot.id,
+          createdBy: userId("pharma"),
+        })),
       ),
     );
 

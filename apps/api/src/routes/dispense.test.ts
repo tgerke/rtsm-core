@@ -1,5 +1,5 @@
 import { activateList, withActor } from "@rtsm-core/core";
-import { createDb, databaseUrl, dispenseEvents, kits, kitTypes } from "@rtsm-core/db";
+import { createDb, databaseUrl, dispenseEvents, kits, kitTypes, studies } from "@rtsm-core/db";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -178,6 +178,21 @@ describe("dispensing", () => {
         .update(kits)
         .set({ expiresOn: "2026-01-01" })
         .where(eq(kits.id, nearKit?.id ?? "")),
+    );
+    const response = await dispense(study.id, subjectKey, token, site.id);
+    expect(response.statusCode).toBe(201);
+    expect(response.json().kitNumber).toBe(`K-${suffix}-A2`);
+  });
+
+  it("respects the do-not-dispense window (ADR-0009)", async () => {
+    const { study, site, suffix, token } = await setupDispensableStudy();
+    const subjectKey = `SUBJ-${uniqueSuffix()}`;
+    await randomize(study.id, subjectKey, token, site.id);
+
+    // The near-dated Arm A kit (2026-10-31) is unexpired but inside a
+    // 120-day window; the 2027 kit must be chosen instead.
+    await withActor(db, { label: "test-setup" }, (tx) =>
+      tx.update(studies).set({ doNotDispenseDays: 120 }).where(eq(studies.id, study.id)),
     );
     const response = await dispense(study.id, subjectKey, token, site.id);
     expect(response.statusCode).toBe(201);

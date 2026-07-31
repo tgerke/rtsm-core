@@ -1,4 +1,4 @@
-import { kits, kitTypes, sites } from "@rtsm-core/db";
+import { depots, kits, kitTypes } from "@rtsm-core/db";
 import { and, eq } from "drizzle-orm";
 import type { Tx } from "./actor.js";
 import { DomainError } from "./errors.js";
@@ -54,24 +54,24 @@ export function parseKitCsv(csv: string): KitRow[] {
 }
 
 /**
- * Imports a kit shipment. Kit type codes must already exist in the study;
- * each kit row is trigger-audited individually (0005) — kit lifecycle is
- * per-kit, unlike list entries. Must run inside withActor.
+ * Imports a manufacturer batch to a depot (ADR-0009: import lands at a
+ * depot; depot-to-site is always a shipment). Kit type codes must already
+ * exist in the study; each kit row is trigger-audited individually (0005) —
+ * kit lifecycle is per-kit, unlike list entries. Must run inside withActor.
  */
 export async function importKits(
   tx: Tx,
-  input: { studyId: string; csv: string; siteId?: string; createdBy: string },
+  input: { studyId: string; csv: string; depotId: string; createdBy: string },
 ): Promise<{ count: number }> {
   const rows = parseKitCsv(input.csv);
 
-  if (input.siteId) {
-    const [site] = await tx
-      .select({ id: sites.id })
-      .from(sites)
-      .where(and(eq(sites.id, input.siteId), eq(sites.studyId, input.studyId)))
-      .limit(1);
-    if (!site) throw new DomainError("site not found in this study", 404);
-  }
+  const [depot] = await tx
+    .select({ status: depots.status })
+    .from(depots)
+    .where(and(eq(depots.id, input.depotId), eq(depots.studyId, input.studyId)))
+    .limit(1);
+  if (!depot) throw new DomainError("depot not found in this study", 404);
+  if (depot.status !== "active") throw new DomainError("depot is closed", 409);
 
   const types = await tx
     .select({ id: kitTypes.id, code: kitTypes.code })
@@ -93,7 +93,7 @@ export async function importKits(
         kitNumber: r.kitNumber,
         lot: r.lot,
         expiresOn: r.expiresOn,
-        siteId: input.siteId ?? null,
+        depotId: input.depotId,
         createdBy: input.createdBy,
       })),
     );

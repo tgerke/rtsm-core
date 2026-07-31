@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { importList, withActor } from "@rtsm-core/core";
-import { type Db, roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
+import { type Db, depots, roles, sites, studies, userStudyRoles, users } from "@rtsm-core/db";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { hashPassword } from "./auth/password.js";
@@ -84,6 +84,18 @@ export async function createTestSite(db: Db, studyId: string, opts: { name?: str
       .returning();
     if (!site) throw new Error("test site insert failed");
     return site;
+  });
+}
+
+export async function createTestDepot(db: Db, studyId: string, opts: { name?: string } = {}) {
+  const suffix = uniqueSuffix();
+  return withActor(db, { label: "test-setup" }, async (tx) => {
+    const [depot] = await tx
+      .insert(depots)
+      .values({ studyId, code: `DEPOT-${suffix}`, name: opts.name ?? `Test Depot ${suffix}` })
+      .returning();
+    if (!depot) throw new Error("test depot insert failed");
+    return depot;
   });
 }
 

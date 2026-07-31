@@ -6,10 +6,13 @@ import { authPlugin } from "./auth/plugin.js";
 import { auditRoutes } from "./routes/audit.js";
 import { codeBreakRoutes } from "./routes/codebreak.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
+import { depotRoutes } from "./routes/depots.js";
 import { dispenseRoutes } from "./routes/dispense.js";
 import { kitRoutes } from "./routes/kits.js";
 import { listRoutes } from "./routes/lists.js";
 import { randomizeRoutes } from "./routes/randomize.js";
+import { resupplyRoutes } from "./routes/resupply.js";
+import { shipmentRoutes } from "./routes/shipments.js";
 import { siteRoutes } from "./routes/sites.js";
 import { studyRoutes } from "./routes/studies.js";
 
@@ -41,6 +44,9 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   await server.register(studyRoutes);
   await server.register(siteRoutes);
   await server.register(kitRoutes);
+  await server.register(depotRoutes);
+  await server.register(shipmentRoutes);
+  await server.register(resupplyRoutes);
   await server.register(dispenseRoutes);
   await server.register(listRoutes);
   await server.register(randomizeRoutes);

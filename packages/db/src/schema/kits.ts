@@ -35,6 +35,8 @@ export const kits = pgTable(
     lot: text("lot").notNull(),
     expiresOn: date("expires_on").notNull(),
     siteId: uuid("site_id").references(() => sites.id),
+    // Both location columns NULL = in transit (or lost); see 0008.
+    depotId: uuid("depot_id"),
     status: text("status").notNull().default("available"),
     statusReason: text("status_reason"),
     createdBy: uuid("created_by")

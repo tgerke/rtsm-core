@@ -1,6 +1,7 @@
 export * from "./audit.js";
 export * from "./auth.js";
 export * from "./codebreak.js";
+export * from "./depots.js";
 export * from "./dispensing.js";
 export * from "./kits.js";
 export * from "./randomization.js";

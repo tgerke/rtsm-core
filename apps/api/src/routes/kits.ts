@@ -1,6 +1,11 @@
-import { importKits, recordUnblindedAccess, withActor } from "@rtsm-core/core";
-import { kits, kitTypes, sites } from "@rtsm-core/db";
-import { kitImportSchema, kitTypeCreateSchema, kitUpdateSchema } from "@rtsm-core/schemas";
+import { evaluateResupply, importKits, recordUnblindedAccess, withActor } from "@rtsm-core/core";
+import { depots, kits, kitTypes, sites, studies } from "@rtsm-core/db";
+import {
+  dispenseWindowSchema,
+  kitImportSchema,
+  kitTypeCreateSchema,
+  kitUpdateSchema,
+} from "@rtsm-core/schemas";
 import { and, asc, eq } from "drizzle-orm";
 import type { FastifyPluginAsync } from "fastify";
 import { requirePermission } from "../auth/plugin.js";
@@ -86,7 +91,7 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
-  /** Imports a kit shipment CSV, optionally shipped to one site. */
+  /** Imports a manufacturer batch CSV to a depot (ADR-0009). */
   app.post(
     "/studies/:studyId/kits",
     { preHandler: requirePermission("kit.manage", (r) => ({ studyId: studyIdOf(r) })) },
@@ -103,7 +108,7 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
             importKits(tx, {
               studyId: studyIdOf(request),
               csv: parsed.data.csv,
-              ...(parsed.data.siteId !== undefined ? { siteId: parsed.data.siteId } : {}),
+              depotId: parsed.data.depotId,
               createdBy: user.id,
             }),
         );
@@ -133,9 +138,11 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
         status: kits.status,
         statusReason: kits.statusReason,
         siteCode: sites.code,
+        depotCode: depots.code,
       })
       .from(kits)
       .leftJoin(sites, eq(sites.id, kits.siteId))
+      .leftJoin(depots, eq(depots.id, kits.depotId))
       .where(eq(kits.studyId, studyIdOf(request)))
       .orderBy(asc(kits.kitNumber));
   });
@@ -165,10 +172,12 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
             status: kits.status,
             statusReason: kits.statusReason,
             siteCode: sites.code,
+            depotCode: depots.code,
           })
           .from(kits)
           .innerJoin(kitTypes, eq(kitTypes.id, kits.kitTypeId))
           .leftJoin(sites, eq(sites.id, kits.siteId))
+          .leftJoin(depots, eq(depots.id, kits.depotId))
           .where(eq(kits.studyId, studyId))
           .orderBy(asc(kits.kitNumber));
       });
@@ -176,9 +185,10 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
   );
 
   /**
-   * Pharmacist inventory act: site transfer and/or status change, reason
-   * required. Dispensed kits are immutable here — dispensing (and any future
-   * return flow) owns that state.
+   * Pharmacist inventory act: a status change with the reason required.
+   * Location never changes here — kits move only by shipment (ADR-0009).
+   * Flow-owned states are immutable: dispensing owns dispensed, shipments
+   * own in_transit, receipt owns lost.
    */
   app.put(
     "/studies/:studyId/kits/:kitId",
@@ -186,9 +196,6 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const parsed = kitUpdateSchema.safeParse(request.body);
       if (!parsed.success) return reply.code(400).send({ error: parsed.error.message });
-      if (parsed.data.status === undefined && parsed.data.siteId === undefined) {
-        return reply.code(400).send({ error: "nothing to change: provide status and/or siteId" });
-      }
       const user = request.user as AuthenticatedUser;
       const { kitId } = request.params as { kitId: string };
       const db = request.server.db;
@@ -200,30 +207,30 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
         .where(and(eq(kits.id, kitId), eq(kits.studyId, studyId)))
         .limit(1);
       if (!kit) return reply.code(404).send({ error: "kit not found" });
-      if (kit.status === "dispensed") {
-        return reply.code(409).send({ error: "kit is dispensed and can no longer be changed" });
-      }
-      if (parsed.data.siteId) {
-        const [site] = await db
-          .select({ id: sites.id })
-          .from(sites)
-          .where(and(eq(sites.id, parsed.data.siteId), eq(sites.studyId, studyId)))
-          .limit(1);
-        if (!site) return reply.code(404).send({ error: "site not found in this study" });
+      if (kit.status === "dispensed" || kit.status === "in_transit" || kit.status === "lost") {
+        return reply.code(409).send({ error: `kit is ${kit.status} and cannot be changed here` });
       }
 
       const updated = await withActor(db, { userId: user.id, label: user.username }, async (tx) => {
         const [row] = await tx
           .update(kits)
           .set({
-            ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
-            ...(parsed.data.siteId !== undefined ? { siteId: parsed.data.siteId } : {}),
+            status: parsed.data.status,
             statusReason: parsed.data.reason,
             updatedAt: new Date(),
           })
           .where(eq(kits.id, kitId))
           .returning();
         if (!row) throw new Error("kit update returned no row");
+        // Damage/quarantine at a site reduces its stock: re-check the
+        // threshold in the same transaction (ADR-0009).
+        if (row.siteId && row.status !== "available") {
+          await evaluateResupply(tx, {
+            studyId,
+            siteId: row.siteId,
+            kitTypeId: row.kitTypeId,
+          });
+        }
         return row;
       });
       return {
@@ -233,6 +240,41 @@ export const kitRoutes: FastifyPluginAsync = async (app) => {
         statusReason: updated.statusReason,
         siteId: updated.siteId,
       };
+    },
+  );
+
+  /**
+   * The do-not-dispense window (ADR-0009; E6(R3) §3.15.3(c)(v)): kits
+   * expiring within the window stop being dispensable. Supply policy, so
+   * kit.manage rather than study administration.
+   */
+  app.put(
+    "/studies/:studyId/dispense-window",
+    { preHandler: requirePermission("kit.manage", (r) => ({ studyId: studyIdOf(r) })) },
+    async (request, reply) => {
+      const parsed = dispenseWindowSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ error: parsed.error.message });
+      const user = request.user as AuthenticatedUser;
+      try {
+        await loadStudy(request.server.db, studyIdOf(request));
+        const updated = await withActor(
+          request.server.db,
+          { userId: user.id, label: user.username },
+          async (tx) => {
+            const [row] = await tx
+              .update(studies)
+              .set({ doNotDispenseDays: parsed.data.doNotDispenseDays, updatedAt: new Date() })
+              .where(eq(studies.id, studyIdOf(request)))
+              .returning({ doNotDispenseDays: studies.doNotDispenseDays });
+            if (!row) throw new Error("study update returned no row");
+            return row;
+          },
+        );
+        return updated;
+      } catch (err) {
+        if (await replyDomainError(reply, err)) return;
+        throw err;
+      }
     },
   );
 };

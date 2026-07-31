@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "../server.js";
 import {
+  createTestDepot,
   createTestSite,
   createTestStudy,
   createTestUser,
@@ -25,7 +26,7 @@ afterAll(async () => {
   await client.end();
 });
 
-/** Study with a pharmacist, a blinded coordinator, and one site. */
+/** Study with a pharmacist, a blinded coordinator, one site, one depot. */
 async function setupKitStudy() {
   const admin = await createTestUser(db, { username: `admin-${uniqueSuffix()}` });
   const pharmacist = await createTestUser(db, { username: `pharma-${uniqueSuffix()}` });
@@ -34,9 +35,10 @@ async function setupKitStudy() {
   await grantTestRole(db, pharmacist.id, study.id, "pharmacist", admin.id);
   await grantTestRole(db, coordinator.id, study.id, "coordinator", admin.id);
   const site = await createTestSite(db, study.id);
+  const depot = await createTestDepot(db, study.id);
   const pharmacistToken = await loginAs(server, pharmacist.username);
   const coordinatorToken = await loginAs(server, coordinator.username);
-  return { study, site, pharmacist, pharmacistToken, coordinatorToken };
+  return { study, site, depot, pharmacist, pharmacistToken, coordinatorToken };
 }
 
 function post(url: string, token: string, payload: object) {
@@ -124,24 +126,24 @@ describe("kit types (the kit-to-arm map)", () => {
 });
 
 describe("kit inventory", () => {
-  it("imports a shipment and lists it blinded with no kit-type identifier", async () => {
-    const { study, site, pharmacistToken, coordinatorToken } = await setupKitStudy();
+  it("imports a batch to the depot and lists it blinded with no kit-type identifier", async () => {
+    const { study, depot, pharmacistToken, coordinatorToken } = await setupKitStudy();
     const suffix = uniqueSuffix();
     const { typeA, typeB } = await createKitTypes(study.id, pharmacistToken, suffix);
 
     const imported = await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: KIT_CSV(typeA, typeB, suffix),
-      siteId: site.id,
+      depotId: depot.id,
     });
     expect(imported.statusCode).toBe(201);
     expect(imported.json().count).toBe(3);
 
     const blinded = await get(`/studies/${study.id}/kits`, coordinatorToken);
     expect(blinded.statusCode).toBe(200);
-    const rows = blinded.json() as Array<{ kitNumber: string; siteCode: string }>;
+    const rows = blinded.json() as Array<{ kitNumber: string; depotCode: string }>;
     const mine = rows.filter((r) => r.kitNumber.startsWith(`K-${suffix}`));
     expect(mine).toHaveLength(3);
-    expect(mine[0]?.siteCode).toBe(site.code);
+    expect(mine[0]?.depotCode).toBe(depot.code);
     // No arm, no type code, no type id anywhere in the blinded body.
     expect(blinded.body).not.toContain("Arm A");
     expect(blinded.body).not.toContain("Arm B");
@@ -150,12 +152,12 @@ describe("kit inventory", () => {
   });
 
   it("shows the arm join only on the unblinded listing", async () => {
-    const { study, site, pharmacistToken, coordinatorToken } = await setupKitStudy();
+    const { study, depot, pharmacistToken, coordinatorToken } = await setupKitStudy();
     const suffix = uniqueSuffix();
     const { typeA, typeB } = await createKitTypes(study.id, pharmacistToken, suffix);
     await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: KIT_CSV(typeA, typeB, suffix),
-      siteId: site.id,
+      depotId: depot.id,
     });
 
     const forbidden = await get(`/studies/${study.id}/kits/unblinded`, coordinatorToken);
@@ -168,37 +170,42 @@ describe("kit inventory", () => {
   });
 
   it("rejects unknown kit types, duplicate kit numbers, and bad expiry dates", async () => {
-    const { study, pharmacistToken } = await setupKitStudy();
+    const { study, depot, pharmacistToken } = await setupKitStudy();
     const suffix = uniqueSuffix();
     const { typeA, typeB } = await createKitTypes(study.id, pharmacistToken, suffix);
 
     const unknownType = await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: `kit_number,kit_type,lot,expiry\nK-${suffix}-X,NOPE,LOT-1,2027-01-31`,
+      depotId: depot.id,
     });
     expect(unknownType.statusCode).toBe(400);
     expect(unknownType.json().error).toMatch(/unknown kit type/);
 
     const badDate = await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: `kit_number,kit_type,lot,expiry\nK-${suffix}-X,${typeA},LOT-1,someday`,
+      depotId: depot.id,
     });
     expect(badDate.statusCode).toBe(400);
 
     const first = await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: KIT_CSV(typeA, typeB, suffix),
+      depotId: depot.id,
     });
     expect(first.statusCode).toBe(201);
     const replay = await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: KIT_CSV(typeA, typeB, suffix),
+      depotId: depot.id,
     });
     expect(replay.statusCode).toBe(409);
   });
 
-  it("transfers and quarantines kits with a reason, but never a dispensed kit", async () => {
-    const { study, site, pharmacistToken } = await setupKitStudy();
+  it("quarantines kits with a reason, but never moves them or touches flow-owned states", async () => {
+    const { study, site, depot, pharmacistToken } = await setupKitStudy();
     const suffix = uniqueSuffix();
     const { typeA, typeB } = await createKitTypes(study.id, pharmacistToken, suffix);
     await post(`/studies/${study.id}/kits`, pharmacistToken, {
       csv: KIT_CSV(typeA, typeB, suffix),
+      depotId: depot.id,
     });
     const listing = await get(`/studies/${study.id}/kits`, pharmacistToken);
     const kit = (listing.json() as Array<{ id: string; kitNumber: string }>).find(
@@ -206,13 +213,15 @@ describe("kit inventory", () => {
     );
     if (!kit) throw new Error("imported kit not found in listing");
 
-    const shipped = await server.inject({
+    // Location changes go through shipments only (ADR-0009): a transfer
+    // payload is no longer a valid inventory act.
+    const transfer = await server.inject({
       method: "PUT",
       url: `/studies/${study.id}/kits/${kit.id}`,
       headers: { authorization: `Bearer ${pharmacistToken}` },
       payload: { siteId: site.id, reason: "initial shipment" },
     });
-    expect(shipped.statusCode).toBe(200);
+    expect(transfer.statusCode).toBe(400);
 
     const quarantined = await server.inject({
       method: "PUT",
@@ -224,7 +233,7 @@ describe("kit inventory", () => {
     expect(quarantined.json().status).toBe("quarantined");
     expect(quarantined.json().statusReason).toBe("temperature excursion");
 
-    // Force a dispensed kit directly (the dispensing flow arrives next stage).
+    // Force a dispensed kit directly; flow-owned states reject the PUT.
     const { withActor } = await import("@rtsm-core/core");
     const { kits } = await import("@rtsm-core/db");
     await withActor(db, { label: "test-setup" }, (tx) =>

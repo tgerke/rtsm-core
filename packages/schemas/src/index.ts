@@ -62,21 +62,94 @@ export const kitTypeCreateSchema = z.object({
 });
 export type KitTypeCreateRequest = z.infer<typeof kitTypeCreateSchema>;
 
+// Import lands at a depot (ADR-0009); depot-to-site is always a shipment.
 export const kitImportSchema = z.object({
   csv: z.string().min(1).max(5_000_000),
-  // Ship the whole batch to one site at import; omit to import unassigned.
-  siteId: z.uuid().optional(),
+  depotId: z.uuid(),
 });
 export type KitImportRequest = z.infer<typeof kitImportSchema>;
 
-// Pharmacist inventory acts: transfer to a site and/or a status change, with
-// the reason captured for the audit trail. 'dispensed' is not settable here.
+// Pharmacist inventory act: a status change with the reason captured for the
+// audit trail. 'dispensed'/'in_transit'/'lost' are flow-owned, not settable;
+// location changes go through shipments (ADR-0009).
 export const kitUpdateSchema = z.object({
-  status: z.enum(["available", "damaged", "quarantined"]).optional(),
-  siteId: z.uuid().nullable().optional(),
+  status: z.enum(["available", "damaged", "quarantined"]),
   reason: z.string().min(1).max(1000),
 });
 export type KitUpdateRequest = z.infer<typeof kitUpdateSchema>;
+
+// ---------------------------------------------------------------------------
+// Depots, shipments, resupply (ADR-0009)
+// ---------------------------------------------------------------------------
+
+export const depotCreateSchema = z.object({
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(200),
+});
+export type DepotCreateRequest = z.infer<typeof depotCreateSchema>;
+
+export const depotUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  status: z.enum(["active", "closed"]).optional(),
+});
+export type DepotUpdateRequest = z.infer<typeof depotUpdateSchema>;
+
+// Composition is by type and quantity; the server picks the kits (FEFO with
+// the per-shipment shelf-life floor). Creating a shipment is the dispatch.
+export const shipmentCreateSchema = z.object({
+  depotId: z.uuid(),
+  siteId: z.uuid(),
+  minShelfLifeDays: z.number().int().min(0).max(3650).optional(),
+  items: z
+    .array(
+      z.object({
+        kitTypeCode: z.string().min(1).max(50),
+        quantity: z.number().int().min(1).max(10_000),
+      }),
+    )
+    .min(1),
+});
+export type ShipmentCreateRequest = z.infer<typeof shipmentCreateSchema>;
+
+// The blinded receiving act: every kit on the shipment gets a disposition;
+// damaged/missing require the reason.
+export const shipmentReceiveSchema = z.object({
+  dispositions: z
+    .array(
+      z.object({
+        kitNumber: z.string().min(1).max(100),
+        disposition: z.enum(["received", "damaged", "missing"]),
+        reason: z.string().min(1).max(1000).optional(),
+      }),
+    )
+    .min(1),
+});
+export type ShipmentReceiveRequest = z.infer<typeof shipmentReceiveSchema>;
+
+// Fall to trigger, propose up to target (ADR-0009).
+export const resupplySchemeSchema = z
+  .object({
+    siteId: z.uuid(),
+    kitTypeCode: z.string().min(1).max(50),
+    triggerLevel: z.number().int().min(0).max(100_000),
+    targetLevel: z.number().int().min(1).max(100_000),
+  })
+  .refine((s) => s.targetLevel > s.triggerLevel, {
+    message: "targetLevel must be greater than triggerLevel",
+  });
+export type ResupplySchemeRequest = z.infer<typeof resupplySchemeSchema>;
+
+export const resupplyDismissSchema = z.object({
+  reason: z.string().min(1).max(1000),
+});
+export type ResupplyDismissRequest = z.infer<typeof resupplyDismissSchema>;
+
+// Do-not-dispense window (ADR-0009): kits expiring within the window are
+// excluded from dispensing FEFO.
+export const dispenseWindowSchema = z.object({
+  doNotDispenseDays: z.number().int().min(0).max(3650),
+});
+export type DispenseWindowRequest = z.infer<typeof dispenseWindowSchema>;
 
 // The dispensing site; the server resolves the subject's arm to a kit
 // without revealing either.

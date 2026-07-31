@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const studies = pgTable(
   "study",
@@ -11,6 +11,8 @@ export const studies = pgTable(
     // from audit snapshots, never serialized to clients.
     edcApiKey: text("edc_api_key").notNull(),
     enabled: boolean("enabled").notNull().default(true),
+    // Dispensing FEFO excludes kits expiring within this window (ADR-0009).
+    doNotDispenseDays: integer("do_not_dispense_days").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
