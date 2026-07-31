@@ -119,10 +119,12 @@ anti-lock-in argument real.
 
 Ordered by how the ADRs stage the work.
 
-1. **Validation pack + release mechanism**: port edc-core's
-   `scripts/validation-pack.mjs` approach (traceability-driven test evidence
-   attached to releases) once there is a release, plus a `release.yml`
-   publishing GHCR images.
+1. **Validation pack + release mechanism** — built (v0.5.0):
+   `scripts/validation-pack.mjs` joins the traceability matrix to each
+   commit's test results (P11-05), and `release.yml` attaches the pack and
+   publishes GHCR images (`ghcr.io/tgerke/rtsm-core-{api,web}`) on every
+   `v*` tag. Remaining: tag the first release, then the clinical-stack
+   wiring below.
 2. **At-rest protection of arms** (column-level encryption of
    `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit),
    now also the study seed (ADR-0008 decision 8), and encrypted storage of

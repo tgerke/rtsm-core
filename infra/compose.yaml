@@ -17,5 +17,31 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      # Migrations run at startup as the owner (DATABASE_URL); runtime
+      # traffic uses the DML-only rtsm_app role (APP_DATABASE_URL).
+      DATABASE_URL: postgres://rtsm:rtsm-dev-only@postgres:5432/rtsm
+      # dev password from 0002_least_priv_role.sql; change it in any real deploy
+      APP_DATABASE_URL: postgres://rtsm_app:rtsm_app@postgres:5432/rtsm
+      PORT: "3002"
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "5175:5175"
+    depends_on:
+      - api
+
 volumes:
   pgdata:

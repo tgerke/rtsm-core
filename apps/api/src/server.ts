@@ -17,7 +17,7 @@ import { shipmentRoutes } from "./routes/shipments.js";
 import { siteRoutes } from "./routes/sites.js";
 import { studyRoutes } from "./routes/studies.js";
 
-export const API_VERSION = "0.3.0";
+export const API_VERSION = "0.5.0";
 
 export interface BuildServerOptions {
   db?: Db;
