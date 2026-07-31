@@ -39,7 +39,14 @@ are running low, and when. Roadmap item 1 (docs/plan.md) is this gap.
    one level up), excluding any that expire within a per-shipment
    `minShelfLifeDays` — a kit that will be dust before the site can
    dispense it should not get on the truck. A parameter, not config: the
-   pharmacist states the floor per shipment, default zero.
+   pharmacist states the floor per shipment, default zero. The same
+   reasoning reaches dispensing: E6(R3) §3.15.3(c)(v) expects the product
+   "stable over the period of use and only used within the current shelf
+   life", and a kit handed over the day before expiry fails that the
+   moment the participant takes it home. Dispensing therefore gains a
+   per-study do-not-dispense window (default zero, preserving v0.3
+   behavior; set behind `kit.manage`) that the FEFO query applies on top
+   of the existing unexpired check.
 5. **Receipt is a blinded, site-scoped act.** A new `shipment.receive`
    permission (seeded to `coordinator` and `pharmacist`; site-scoped
    grants reach only their own site) confirms arrival with a per-kit
@@ -102,13 +109,40 @@ are running low, and when. Roadmap item 1 (docs/plan.md) is this gap.
   leak through every blinded surface. The import cannot detect intent, so
   this stays a packaging/statistician responsibility — worth a line in
   the site docs when this ships.
-- `[VERIFY]` before acceptance: what E6(R3) actually requires of
-  investigational-product shipping, receipt, and accountability records
-  (and whether GDP guidance is in scope for a sponsor-side system) must be
-  read from source text and cited, or the traceability rows for this
-  feature stay unwritten. Nothing in this ADR's regulatory framing is
-  grounded yet.
-- Open questions for review: trigger/target naming versus industry min/max
-  vocabulary; whether `minShelfLifeDays` should also gate dispensing
-  (today dispense requires only unexpired); whether v1 needs more than one
-  depot per study in practice, given routing is manual either way.
+- Regulatory grounding, read from source text (ICH E6(R3), Step 4 final,
+  6 Jan 2025): Annex 1 §2.10.1 places IP accountability with the
+  investigator/institution and lets the sponsor "facilitate aspects of
+  investigational product management (e.g., by providing forms and
+  technical solutions, such as computerised systems, and arranging
+  distribution of investigational product to trial participants)" — the
+  role this system plays. §2.10.4 names the record content the schema
+  must carry: delivery, inventory, per-participant use, and
+  return/disposition, including "dates, quantities, batch/serial numbers,
+  expiration dates (if applicable) and the unique code numbers assigned
+  to the investigational product(s) and trial participants".
+  §3.15.3(c)(i)–(ii) gives the sponsor side: timely provision "to avoid
+  any interruption to the trial" (the resupply trigger's job) and records
+  documenting "the identity, shipment, receipt, return and destruction or
+  alternative disposition of the investigational product(s)" (the
+  shipment and receipt rows). Appendix C §C.3.1(v)–(w) puts shipment
+  information and manufacturer-to-dispensation traceability among the
+  essential-record criteria. Traceability-matrix rows for this feature
+  follow the build.
+- GDP resolved: the EU GDP guidelines (2013/C 343/01) are issued under
+  Articles 84 and 85b(3) of Directive 2001/83/EC and govern wholesale
+  distribution of medicinal products; the guideline text nowhere mentions
+  investigational products, and Directive 2001/83/EC Article 3(3)
+  excludes "medicinal products intended for research and development
+  trials" from that Directive's scope. GDP does not bind this system;
+  E6(R3) is the operative text for what rtsm-core records.
+- A gap the grounding exposes: §2.10.4 and §3.15.3(c)(iii)–(iv) also
+  expect return, retrieval, and destruction records, and this scope ends
+  at dispensing — `dispensed` stays terminal, and returns/destruction
+  accountability lives outside the system until a future ADR builds it.
+- Questions resolved for review (2026-07-31): keep `trigger_level` /
+  `target_level` — the names say what the numbers do (fall to the
+  trigger, propose up to the target), where min/max vocabulary implies a
+  stock ceiling this scheme does not enforce. The shelf-life floor does
+  reach dispensing (decision 4). Multiple depots stay allowed from day
+  one: every shipment names its depot, so the schema costs nothing extra
+  and a single-depot constraint would only need removing later.
