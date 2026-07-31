@@ -1,8 +1,8 @@
-# ADR-0008: In-app covariate-adaptive randomization (proposed)
+# ADR-0008: In-app covariate-adaptive randomization
 
-Status: proposed (2026-07-31). Amends ADR-0001, scoped to opt-in generation;
-uploaded lists remain the default. Design detail in
-`docs/design/adaptive-randomization.md`.
+Status: accepted (2026-07-31; proposed the same day). Amends ADR-0001,
+scoped to opt-in generation; uploaded lists remain the default. Design
+detail in `docs/design/adaptive-randomization.md`.
 
 ## Context
 
@@ -18,15 +18,15 @@ allocations before it — there is no list to upload, so a trial using one
 cannot run on this system at all today. This ADR walks through that door for
 exactly one method, and proposes the terms.
 
-## Decision (proposed)
+## Decision
 
 1. **Opt-in per study; lists stay the default.** A study activates either a
    list or a method, never both. Everything ADR-0001 says about uploaded
    lists — the rigid CSV, the sha256 anchor, versioned drafts, invisible
    block structure — stands unchanged.
-2. **One method: Pocock–Simon minimization with a biased-coin p, equal
-   allocation ratios, p bounded away from 1.** One algorithm keeps the
-   correctness argument makeable. Nothing response-adaptive: that needs an
+2. **One method: Pocock–Simon minimization — range imbalance metric,
+   biased-coin p in [0.6, 0.95] (default 0.8), equal allocation ratios
+   only.** One algorithm keeps the correctness argument makeable. Nothing response-adaptive: that needs an
    EDC outcome channel that does not exist and would be its own ADR.
 3. **The engine is a pure TypeScript function in-process**, versioned,
    taking config, a counts snapshot, covariates, and a uniform draw, and
@@ -78,15 +78,21 @@ exactly one method, and proposes the terms.
 ## Consequences
 
 - The validation envelope grows by one algorithm (E6(R3) Annex 1
-  §4.3.4(h), as cited in ADR-0001 — `[VERIFY]` against the adaptive case
-  before acceptance). The price is the evidence plan: R-oracle
+  §4.3.4(h), verified against the adaptive case 2026-07-31; §4.3.4(e)'s
+  protocol-specific-configuration clause covers the method config — see
+  the design doc's validation evidence). The price is the evidence plan:
+  R-oracle
   cross-validation in CI, a replay verification routine, simulation studies
   archived as validation-pack evidence, and new traceability rows
   (reproducibility family, BL and P11-06 extensions).
 - The design doc's open questions — imbalance metric, weights, p bounds,
   tie behavior, mid-study factor changes, ratio support, draw-record
-  access, seed custody — are statistician decisions. This ADR is not
-  accepted until they are answered and the `[VERIFY]` regulatory markers
-  are resolved against source text.
-- Acceptance re-stages the roadmap: depot/resupply remains the next build
-  regardless; this work would slot behind it.
+  access, seed custody — were answered by the statistician on 2026-07-31
+  and are recorded in the design doc (range-only metric, uniform weights
+  with site included, p default 0.8 in [0.6, 0.95], full-history recompute
+  on factor changes, ratios deferred, `list.read_unblinded` gating draws
+  and seed). The `[VERIFY]` regulatory markers were resolved against
+  source text the same day (design doc, validation evidence). Both
+  acceptance conditions are met.
+- Acceptance re-stages the roadmap: depot/resupply shipped in v0.4, so
+  this is the next build (docs/plan.md, roadmap item 1).

@@ -88,12 +88,13 @@ anti-lock-in argument real.
 
 Ordered by how the ADRs stage the work.
 
-1. **Covariate-adaptive randomization** (amends ADR-0001): a design spike
-   exists — `docs/design/adaptive-randomization.md` and ADR-0008 (proposed)
-   — proposing an in-process Pocock–Simon minimization engine, opt-in per
-   study. Blocked on the statistician's open questions and `[VERIFY]`
-   regulatory checks recorded there. In-app generation of *static* lists
-   remains a separate, conditional question; uploading stays the default.
+1. **Covariate-adaptive randomization** (amends ADR-0001): ADR-0008
+   accepted 2026-07-31 — an in-process Pocock–Simon minimization engine
+   (range metric, biased-coin p default 0.8), opt-in per study. The
+   statistician's questions are answered and the regulatory checks
+   resolved in `docs/design/adaptive-randomization.md`; ready to build.
+   In-app generation of *static* lists remains a separate, conditional
+   question; uploading stays the default.
 2. **Validation pack + release mechanism**: port edc-core's
    `scripts/validation-pack.mjs` approach (traceability-driven test evidence
    attached to releases) once there is a release, plus a `release.yml`

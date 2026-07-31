@@ -1,8 +1,9 @@
 # Design: in-app covariate-adaptive randomization
 
-Status: draft, paired with ADR-0008 (proposed). Nothing here is built; this
-document exists so the decision to build it — or not — is made on the record,
-with the statistician's questions answered first.
+Status: accepted design, paired with ADR-0008 (accepted 2026-07-31).
+Nothing here is built yet; this document made the decision to build it on
+the record, with the statistician's questions answered first — the answers
+and the regulatory verification are recorded below.
 
 ## Purpose and scope
 
@@ -45,25 +46,30 @@ v1 implements one method and nothing else. One algorithm keeps the
 correctness argument small enough to actually make.
 
 - Factors: a configured set of categorical covariates (e.g. site, disease
-  stage), each with enumerated levels and a weight.
-- On each randomization: for every arm, compute the marginal imbalance that
-  would result from assigning this subject to it, as the weighted sum across
-  factors of the subject's level counts. The arm minimizing imbalance is
-  favored with probability p (the biased coin); ties split the favored
-  probability equally.
-- p is configuration, bounded away from 1. Deterministic minimization
-  (p = 1) makes the next assignment predictable to anyone who knows the
-  config and the current counts, so the bound is a blinding control, not a
-  tuning preference.
+  stage), each with enumerated levels and a weight — uniform (1.0) unless
+  overridden, and site is a minimization factor by default (decision 2).
+- On each randomization: for every candidate arm, hypothetically assign the
+  subject and score the imbalance as the weighted sum, across factors, of
+  the range (max − min) of arm counts at the subject's level of that
+  factor. Range is the only v1 metric (decision 1), recorded explicitly in
+  the config (`imbalanceMetric: 'range'`) so a later variance or SD
+  variant is a new config value, not a schema change. The arm minimizing
+  imbalance is favored with probability p (the biased coin); ties split the
+  favored probability equally.
+- p is configuration: bounds 0.6–0.95, default 0.8 (decision 3), never 1.
+  Deterministic minimization (p = 1) makes the next assignment predictable
+  to anyone who knows the config and the current counts, so the bound is a
+  blinding control, not a tuning preference — and E9 §2.3.2 requires the
+  random element outright (see validation evidence).
 - v1 supports equal allocation ratios only. Unequal ratios under
-  minimization are methodologically nontrivial and deferred (open question
-  6).
+  minimization are methodologically nontrivial and deferred entirely; the
+  extension method is chosen in its own ADR when a trial needs one
+  (decision 6).
 - First subject, and any subject whose imbalance scores tie across all arms:
-  pure random with equal probability.
+  pure random with equal probability (confirmed, decision 4).
 
-The imbalance metric (range vs. variance vs. weighted marginal totals) and
-the factor weights are statistician decisions; the config schema is shaped
-by open questions 1 and 2 below.
+The metric and weight defaults above are the statistician's decisions,
+recorded with the rest at the end of this document.
 
 ## Engine host: TypeScript in-process
 
@@ -205,8 +211,8 @@ New arm-bearing surfaces, and the treatment of each:
 Predictability is the second axis. With p < 1 the next assignment is not
 determined even for someone who knows the config and counts — and knowing
 the counts already requires unblinded access, which is logged. Both defenses
-are needed; neither alone suffices. Whether draw records should sit behind
-something narrower than `list.read_unblinded` is open question 7.
+are needed; neither alone suffices. Draw records stay behind
+`list.read_unblinded`; no narrower capability (decision 7).
 
 ## Configuration lifecycle
 
@@ -218,10 +224,10 @@ traceability row (P11-06).
 
 Mid-study change: a new method version is a new draft, activated the same
 way, retiring the old. Counts carry over automatically because they are
-recomputed from full assignment history under the new config. Whether
-recomputing history under a *changed factor set* is statistically sound is a
-statistician decision (open question 5); the system's position is only that
-a change is a new version with a reason, never an edit.
+recomputed from full assignment history under the new config — including
+under a changed factor set, where prior subjects contribute their
+covariates to the new marginals (decision 5). A change is a new version
+with a reason, never an edit.
 
 ## Integration
 
@@ -235,19 +241,68 @@ is the natural carrier for the minimization inputs.
 
 ## Validation evidence
 
-Per the house rule, no regulatory specifics from memory: statements below
-either reuse citations already verified in this repo's matrix and ADRs, or
-carry a `[VERIFY]` marker for human confirmation against source text before
-this document or ADR-0008 is accepted.
+Per the house rule, no regulatory specifics from memory: every citation
+below was verified against source text (dates noted). The former `[VERIFY]`
+markers on §4.3.4(h) and the FDA/EMA adaptive guidance are resolved by the
+first four bullets.
 
 - The algorithm enters the validation envelope the repo has so far kept it
-  out of (E6(R3) Annex 1 §4.3.4(h), as cited in ADR-0001). `[VERIFY:
-  re-read §4.3.4(h) against the adaptive case specifically — the citation
-  was verified for the list-upload argument, not this one.]`
-- `[VERIFY: whether FDA's guidance on adaptive designs for clinical trials
-  (and any EMA counterpart) imposes requirements on the randomization
-  system itself, as opposed to the protocol and analysis. Do not paraphrase
-  from memory; read the source.]`
+  out of. E6(R3) Annex 1 §4.3.4(h) holds for the adaptive case (verified
+  against the Step 4 final text, 2026-07-31): validation should cover
+  requirements, specifications, testing, and documentation "especially for
+  critical functionality, such as randomisation" — the text names the
+  function, not the method, so a computed assignment sits squarely inside
+  it. §4.3.4(e) reaches further: "protocol-specific configurations and
+  customisations, including automated data entry checks and calculations,
+  should be validated" — the per-study method config is exactly such a
+  configuration. EMA's computerised-systems guideline §4.10 gives the same
+  instruction with the IRT example ("randomisation strata and dose
+  calculations in an IRT system"), and its Annex 5 A5.2.1.2 expects UAT
+  covering all strata combinations — which for minimization becomes
+  factor-level coverage in the engine's test matrix.
+- FDA's adaptive-designs guidance (2019) addresses covariate-adaptive
+  assignment directly (§V.E, naming Pocock–Simon minimization) and lands
+  its requirements on the analysis and the documentation, not the system
+  (verified 2026-07-31). Type I error is not directly increased "when
+  analyzed with the appropriate methodologies (generally randomization or
+  permutation tests)", and predictability "can be mitigated with an
+  additional random component to prevent perfectly deterministic treatment
+  assignment" — source-text grounding for the biased-coin bound. §VIII.B
+  expects the adaptation rule prespecified in detail ("the rule that will
+  be used to make adaptation decisions") and, where novel or custom
+  software is involved, enough information submitted "to ensure there is
+  no ambiguity", including code — the sha256-anchored config, the
+  versioned engine, and the R reference implementation are that artifact.
+  The §VII trial-integrity machinery (adaptation committees, data access
+  plans) is aimed at adaptations driven by comparative interim results,
+  which minimization does not use; its firewall principle — no access to
+  data "that might allow one to infer treatment assignment" — is the
+  blinding table above.
+- ICH E9 §2.3.2 is the sharpest system-facing requirement (verified
+  2026-07-31): "Deterministic dynamic allocation procedures should be
+  avoided and an appropriate element of randomisation should be
+  incorporated for each treatment allocation" — the p < 1 bound is E9
+  compliance, not a tuning preference — and treatment codes should be held
+  centrally, using "appropriate computer algorithms to keep personnel at
+  the central trial office blind".
+- EMA has no adaptive counterpart that reaches this design. The reflection
+  paper on adaptive designs (CHMP/EWP/2459/02, 2007) defines "adaptive" as
+  modification of a design element "at an interim analysis with full
+  control of the type I error", and never mentions minimization, dynamic
+  allocation, or randomization systems (verified against the full text,
+  2026-07-31; the paper is not yet in the standards library). EMA's
+  system-side expectations come from the computerised-systems guideline
+  instead: A5.2.4 requires that "the process of randomisation can be
+  reconstructed via retained documentation and data", with the version
+  and, where applicable, the seed maintained — the draw record, engine
+  versioning, and seed custody are that reconstruction, doing for
+  generated entries what the file sha256 does for uploaded lists.
+- FDA's covariate-adjustment guidance (2023) adds an interaction
+  expectation, not a system one (verified 2026-07-31): "Sponsors should
+  discuss proposals for complex covariate-adaptive randomization … with
+  the relevant review division", and covariates used in randomization
+  should generally enter the analysis model — one more reason
+  `assignment.strata` carries the minimization inputs.
 - New traceability rows in `docs/regulatory-traceability.md`: a
   reproducibility family (RA-xx: "any adaptive assignment replays exactly
   from persisted inputs", proven by the replay test), extensions to BL-04
@@ -258,24 +313,32 @@ this document or ADR-0008 is accepted.
   predictability under the configured p) archived as validation-pack
   evidence, not run at runtime.
 
-## Open questions for the statistician
+## Statistician decisions (answered 2026-07-31)
 
-These shape the config schema and the ADR's acceptance; the design does not
-proceed past "proposed" without answers.
+These were the open questions gating the ADR; the statistician answered
+them on 2026-07-31, and the sections above reflect the answers.
 
-1. Imbalance metric: range, variance, or weighted marginal totals?
-2. Factor weights: uniform by default? Is site a minimization factor?
-3. Biased-coin p: proposed config bounds 0.6–0.95, never 1.0. Default?
-4. Tie and first-subject behavior: pure random per equal ratio — confirm.
-5. Mid-study factor changes: is recomputing full history under the new
-   factor set the correct carry-over, or must history be frozen?
-6. Unequal allocation ratios: v1 excludes them. Which extension method,
-   when needed?
-7. Draw-record access: is `list.read_unblinded` the right gate, or should
-   draw records need something narrower (sponsor-statistician only)?
-8. Seed custody: statistician-supplied at activation, viewable only
-   unblinded, in scope for at-rest encryption — confirm, and name who may
-   ever view it.
+1. Imbalance metric: **range, and only range, in v1.** Simulation
+   comparisons find the metric choice second-order next to p (Shan et al.
+   2024, BMC Med Res Methodol, doi:10.1186/s12874-024-02151-3), two-arm
+   equal-allocation trials barely distinguish the variants, and every
+   additional metric is another set of R-oracle golden vectors in the
+   validation evidence. The config records `imbalanceMetric: 'range'`
+   explicitly so variance/SD can arrive later as new values, not schema
+   changes.
+2. Factor weights: **uniform (1.0) by default**, overridable per factor;
+   **site is a minimization factor by default**.
+3. Biased-coin p: **bounds 0.6–0.95, default 0.8**.
+4. Ties and first subject: **pure equal-probability random — confirmed.**
+5. Mid-study factor changes: **recompute full history under the new factor
+   set**; prior subjects contribute their covariates to the new marginals.
+6. Unequal allocation ratios: **deferred entirely**; the extension method
+   is chosen in its own ADR when a trial needs one.
+7. Draw-record access: **`list.read_unblinded` is the gate** — no narrower
+   capability.
+8. Seed custody: **confirmed as designed** — statistician-supplied at
+   activation (CSPRNG fallback), readable only under `list.read_unblinded`
+   with every read logged, in scope for future at-rest encryption.
 
 ## Out of scope, stated so nobody assumes otherwise
 
