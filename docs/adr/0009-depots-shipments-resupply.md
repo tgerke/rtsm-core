@@ -133,8 +133,13 @@ are running low, and when. Roadmap item 1 (docs/plan.md) is this gap.
   distribution of medicinal products; the guideline text nowhere mentions
   investigational products, and Directive 2001/83/EC Article 3(3)
   excludes "medicinal products intended for research and development
-  trials" from that Directive's scope. GDP does not bind this system;
-  E6(R3) is the operative text for what rtsm-core records.
+  trials" from that Directive's scope. GDP does not bind this system. The
+  EU-side IMP obligation lives instead in Regulation (EU) 536/2014
+  Article 51: "Investigational medicinal products shall be traceable",
+  stored/returned/destroyed "as appropriate and proportionate", with the
+  arrangements described in the application dossier — a proportionality
+  frame the shipment and receipt records serve. E6(R3) remains the
+  operative text for what rtsm-core records.
 - A gap the grounding exposes: §2.10.4 and §3.15.3(c)(iii)–(iv) also
   expect return, retrieval, and destruction records, and this scope ends
   at dispensing — `dispensed` stays terminal, and returns/destruction
