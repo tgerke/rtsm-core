@@ -12,6 +12,7 @@ import {
   type KitRow,
   type KitTypeRow,
   type RandomizationList,
+  type RandomizationMethod,
   type RandomizeResult,
   type ResupplyRequestRow,
   type ShipmentManifest,
@@ -42,6 +43,7 @@ export function StudyPage() {
         </span>
       </div>
       <ListsCard />
+      <MethodsCard />
       {permissions.includes("subject.randomize") && <RandomizeCard />}
       {permissions.includes("kit.dispense") && <DispenseCard />}
       {permissions.includes("subject.codebreak") && <CodeBreakCard />}
@@ -852,6 +854,307 @@ function ListsCard() {
   );
 }
 
+function useMethods() {
+  const { study } = useStudy();
+  return useQuery({
+    queryKey: ["methods", study.id],
+    queryFn: () => api<RandomizationMethod[]>(`/studies/${study.id}/methods`),
+  });
+}
+
+/** Summarizes the blinded config: factors with level counts and weights. */
+function factorSummary(method: RandomizationMethod): string {
+  return method.config.factors
+    .map((f) => `${f.name} (${f.levels.length}${f.weight !== 1 ? ` ×${f.weight}` : ""})`)
+    .join(", ");
+}
+
+function MethodsCard() {
+  const { study, permissions } = useStudy();
+  const queryClient = useQueryClient();
+  const methods = useMethods();
+  const [showCreate, setShowCreate] = useState(false);
+  const [activating, setActivating] = useState<RandomizationMethod | null>(null);
+  const canManage = permissions.includes("list.manage");
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["methods", study.id] });
+    queryClient.invalidateQueries({ queryKey: ["lists", study.id] });
+  };
+
+  // Blinded members without a configured method have nothing to see here.
+  if (!methods.data?.length && !canManage) return null;
+
+  return (
+    <Card
+      title="Adaptive randomization methods"
+      actions={
+        canManage ? <Button onClick={() => setShowCreate(true)}>New method</Button> : undefined
+      }
+    >
+      {methods.data?.length ? (
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-slate-500 uppercase">
+            <tr>
+              <th className="pb-2">Version</th>
+              <th className="pb-2">Factors</th>
+              <th className="pb-2">p</th>
+              <th className="pb-2">Config hash</th>
+              <th className="pb-2">Status</th>
+              <th className="pb-2">Activated</th>
+              <th className="pb-2" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {methods.data.map((method) => (
+              <tr key={method.id}>
+                <td className="py-2">v{method.version}</td>
+                <td className="py-2 text-slate-500">{factorSummary(method)}</td>
+                <td className="py-2">{method.config.p}</td>
+                <td className="py-2 font-mono text-xs text-slate-400">
+                  {method.sha256.slice(0, 8)}
+                </td>
+                <td className="py-2">
+                  <StatusBadge status={method.status} />
+                </td>
+                <td className="py-2 text-slate-500">
+                  {method.status === "active"
+                    ? `${formatDateTime(method.activatedAt)} — ${method.activationReason ?? ""}`
+                    : "—"}
+                </td>
+                <td className="py-2 text-right">
+                  {canManage && method.status === "draft" && (
+                    <Button variant="secondary" onClick={() => setActivating(method)}>
+                      Activate
+                    </Button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="text-sm text-slate-500">
+          No methods configured. For designs no list can express, define Pocock–Simon minimization
+          here; uploaded lists remain the default. Arms and the seed are entered once and never
+          shown again on blinded surfaces.
+        </p>
+      )}
+      {showCreate && (
+        <CreateMethodModal
+          onClose={() => {
+            setShowCreate(false);
+            refresh();
+          }}
+        />
+      )}
+      {activating && (
+        <ActivateMethodModal
+          method={activating}
+          onClose={() => {
+            setActivating(null);
+            refresh();
+          }}
+        />
+      )}
+    </Card>
+  );
+}
+
+function CreateMethodModal({ onClose }: { onClose: () => void }) {
+  const { study } = useStudy();
+  const [arms, setArms] = useState("");
+  const [factors, setFactors] = useState<Array<{ name: string; levels: string; weight: string }>>([
+    { name: "", levels: "", weight: "1" },
+  ]);
+  const [p, setP] = useState("0.8");
+  const [seed, setSeed] = useState("");
+  const create = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/methods`, {
+        method: "POST",
+        body: JSON.stringify({
+          config: {
+            method: "pocock-simon",
+            imbalanceMetric: "range",
+            arms: arms
+              .split(",")
+              .map((a) => a.trim())
+              .filter(Boolean),
+            factors: factors
+              .filter((f) => f.name.trim())
+              .map((f) => ({
+                name: f.name.trim(),
+                levels: f.levels
+                  .split(",")
+                  .map((l) => l.trim())
+                  .filter(Boolean),
+                weight: Number(f.weight) || 1,
+              })),
+            p: Number(p),
+          },
+          ...(seed ? { seed } : {}),
+        }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const setFactor = (
+    index: number,
+    patch: Partial<{ name: string; levels: string; weight: string }>,
+  ) => setFactors(factors.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Modal title="New minimization method" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-sm text-slate-600">
+          Pocock–Simon minimization with the range metric. The config is sha256-anchored on save; a
+          later change means a new version, activated like a list.
+        </p>
+        <Field label="Arms" hint="Comma-separated; entered once, never shown on blinded surfaces.">
+          <input
+            className={inputClass}
+            value={arms}
+            onChange={(e) => setArms(e.target.value)}
+            placeholder="Arm A, Arm B"
+          />
+        </Field>
+        <Field
+          label="Minimization factors"
+          hint="Name, comma-separated levels, weight. A factor named site balances across sites."
+        >
+          <div className="space-y-2">
+            {factors.map((factor, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional
+              <div key={index} className="flex gap-2">
+                <input
+                  className={`${inputClass} w-32`}
+                  placeholder="name"
+                  value={factor.name}
+                  onChange={(e) => setFactor(index, { name: e.target.value })}
+                />
+                <input
+                  className={`${inputClass} grow`}
+                  placeholder="levels, comma-separated"
+                  value={factor.levels}
+                  onChange={(e) => setFactor(index, { levels: e.target.value })}
+                />
+                <input
+                  className={`${inputClass} w-20`}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={factor.weight}
+                  onChange={(e) => setFactor(index, { weight: e.target.value })}
+                />
+              </div>
+            ))}
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setFactors([...factors, { name: "", levels: "", weight: "1" }])}
+            >
+              Add factor
+            </Button>
+          </div>
+        </Field>
+        <Field
+          label="Biased-coin p"
+          hint="0.6–0.95, never 1: the favored arm's probability. Deterministic allocation is not allowed."
+        >
+          <input
+            className={inputClass}
+            type="number"
+            min="0.6"
+            max="0.95"
+            step="0.01"
+            value={p}
+            onChange={(e) => setP(e.target.value)}
+          />
+        </Field>
+        <Field
+          label="Seed (optional)"
+          hint="Statistician-supplied randomness; leave empty to generate one. Readable afterwards only with unblinded access."
+        >
+          <input
+            className={`${inputClass} font-mono`}
+            value={seed}
+            onChange={(e) => setSeed(e.target.value)}
+          />
+        </Field>
+        <ErrorNote message={create.error ? create.error.message : null} />
+        <Button
+          type="submit"
+          disabled={create.isPending || !arms.trim() || !factors.some((f) => f.name.trim())}
+        >
+          {create.isPending ? "Saving…" : "Save as draft"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function ActivateMethodModal({
+  method,
+  onClose,
+}: {
+  method: RandomizationMethod;
+  onClose: () => void;
+}) {
+  const { study } = useStudy();
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+  const activate = useMutation({
+    mutationFn: () =>
+      api(`/studies/${study.id}/methods/${method.id}/activate`, {
+        method: "POST",
+        body: JSON.stringify({ password, reason }),
+      }),
+    onSuccess: onClose,
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    activate.mutate();
+  };
+
+  return (
+    <Modal title={`Activate method v${method.version}`} onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <p className="text-sm text-slate-600">
+          Activation makes this method the study's randomization source, retiring any active list or
+          prior method — from here the application computes assignments. Re-enter your password to
+          sign this action; the reason and your identity are recorded in the audit trail.
+        </p>
+        <Field label="Reason">
+          <input
+            className={inputClass}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </Field>
+        <Field label="Password">
+          <input
+            className={inputClass}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+          />
+        </Field>
+        <ErrorNote message={activate.error ? activate.error.message : null} />
+        <Button type="submit" disabled={activate.isPending || !password || !reason}>
+          {activate.isPending ? "Activating…" : "Activate"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
 function ImportModal({ onClose }: { onClose: () => void }) {
   const { study } = useStudy();
   const [filename, setFilename] = useState("");
@@ -959,11 +1262,20 @@ function RandomizeCard() {
   const { study } = useStudy();
   const queryClient = useQueryClient();
   const sites = useSites();
+  const methods = useMethods();
   const [subjectKey, setSubjectKey] = useState("");
   const [stratum, setStratum] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [covariates, setCovariates] = useState<Record<string, string>>({});
   const [result, setResult] = useState<RandomizeResult | null>(null);
   const activeSites = (sites.data ?? []).filter((s) => s.status === "active");
+
+  // Under an active method the engine needs a level for every factor; the
+  // "site" factor is filled server-side from the chosen site.
+  const activeMethod = (methods.data ?? []).find((m) => m.status === "active");
+  const covariateFactors = (activeMethod?.config.factors ?? []).filter((f) => f.name !== "site");
+  const hasSiteFactor = (activeMethod?.config.factors ?? []).some((f) => f.name === "site");
+  const covariatesComplete = covariateFactors.every((f) => covariates[f.name]);
 
   const randomize = useMutation({
     mutationFn: () =>
@@ -971,15 +1283,20 @@ function RandomizeCard() {
         `/studies/${study.id}/subjects/${encodeURIComponent(subjectKey)}/randomize`,
         {
           method: "POST",
-          body: JSON.stringify({
-            ...(stratum ? { stratum } : {}),
-            ...(siteId ? { siteId } : {}),
-          }),
+          body: JSON.stringify(
+            activeMethod
+              ? { strata: covariates, ...(siteId ? { siteId } : {}) }
+              : {
+                  ...(stratum ? { stratum } : {}),
+                  ...(siteId ? { siteId } : {}),
+                },
+          ),
         },
       ),
     onSuccess: (data) => {
       setResult(data);
       setSubjectKey("");
+      setCovariates({});
       queryClient.invalidateQueries({ queryKey: ["assignments", study.id] });
       queryClient.invalidateQueries({ queryKey: ["deliveries", study.id] });
     },
@@ -1003,18 +1320,45 @@ function RandomizeCard() {
             />
           </Field>
         </div>
-        <div className="grow">
-          <Field label="Stratum" hint="Leave empty for an unstratified list.">
-            <input
-              className={inputClass}
-              value={stratum}
-              onChange={(e) => setStratum(e.target.value)}
-            />
-          </Field>
-        </div>
+        {!activeMethod && (
+          <div className="grow">
+            <Field label="Stratum" hint="Leave empty for an unstratified list.">
+              <input
+                className={inputClass}
+                value={stratum}
+                onChange={(e) => setStratum(e.target.value)}
+              />
+            </Field>
+          </div>
+        )}
+        {covariateFactors.map((factor) => (
+          <div key={factor.name} className="grow">
+            <Field label={factor.name} hint="Minimization covariate.">
+              <select
+                className={inputClass}
+                value={covariates[factor.name] ?? ""}
+                onChange={(e) => setCovariates({ ...covariates, [factor.name]: e.target.value })}
+              >
+                <option value="">—</option>
+                {factor.levels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        ))}
         {activeSites.length > 0 && (
           <div className="grow">
-            <Field label="Site" hint="Required if your access is site-scoped.">
+            <Field
+              label="Site"
+              hint={
+                hasSiteFactor
+                  ? "Feeds the site minimization factor."
+                  : "Required if your access is site-scoped."
+              }
+            >
               <select
                 className={inputClass}
                 value={siteId}
@@ -1030,7 +1374,10 @@ function RandomizeCard() {
             </Field>
           </div>
         )}
-        <Button type="submit" disabled={randomize.isPending || !subjectKey}>
+        <Button
+          type="submit"
+          disabled={randomize.isPending || !subjectKey || (!!activeMethod && !covariatesComplete)}
+        >
           {randomize.isPending ? "Randomizing…" : "Randomize"}
         </Button>
       </form>

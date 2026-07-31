@@ -55,6 +55,25 @@ export interface RandomizationList {
   activationReason: string | null;
 }
 
+// Blinded method serialization (ADR-0008): the seed and config.arms never
+// appear here — factors and p are all a blinded user sees of the config.
+export interface RandomizationMethod {
+  id: string;
+  version: number;
+  status: "draft" | "active" | "retired";
+  sha256: string;
+  engineVersion: string;
+  config: {
+    method: string;
+    imbalanceMetric: string;
+    factors: Array<{ name: string; levels: string[]; weight: number }>;
+    p: number;
+  };
+  createdAt: string;
+  activatedAt: string | null;
+  activationReason: string | null;
+}
+
 export interface Site {
   id: string;
   code: string;
