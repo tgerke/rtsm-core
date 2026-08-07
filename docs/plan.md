@@ -123,8 +123,7 @@ Ordered by how the ADRs stage the work.
    `scripts/validation-pack.mjs` joins the traceability matrix to each
    commit's test results (P11-05), and `release.yml` attaches the pack and
    publishes GHCR images (`ghcr.io/tgerke/rtsm-core-{api,web}`) on every
-   `v*` tag. Remaining: tag the first release, then the clinical-stack
-   wiring below.
+   `v*` tag. v0.5.0 released; the clinical-stack wiring below is done.
 2. **At-rest protection of arms** (column-level encryption of
    `randomization_entry.arm` and `kit_type.arm`, ADR-0003's stated limit),
    now also the study seed (ADR-0008 decision 8), and encrypted storage of
@@ -134,15 +133,17 @@ Ordered by how the ADRs stage the work.
    ADR-0009 ends at dispensing, and `dispensed`/`lost` stay terminal until
    a future ADR builds the return flow.
 
-## clinical-stack wiring (deferred until images exist)
+## clinical-stack wiring (done)
 
-To ship in the umbrella compose next to EDC and CTMS:
-
-1. `rtsm` database + owner role in `clinical-stack/postgres/init/01-databases.sh`.
-2. OIDC client for rtsm-core in `clinical-stack/keycloak/realm-clinical.json`.
-3. `rtsm-migrate` / `rtsm-api` / `rtsm-web` services in `compose.yaml` on
-   `ghcr.io/tgerke/rtsm-core-{api,web}:${RTSM_VERSION}`.
-4. `RTSM_DOMAIN` route in `caddy/Caddyfile` plus the network alias.
-5. Version, domain, and password entries in `.env.example`, and the
-   edc→rtsm service-account wiring documented in the README compatibility
-   matrix.
+Shipped in the [clinical-stack](https://github.com/tgerke/clinical-stack)
+umbrella compose next to EDC and CTMS. The repo turned out to be greenfield
+(it was documented across the siblings but never created), so the wiring
+landed as the initial commit: per-app databases and owner roles in
+`postgres/init/01-databases.sh` (rtsm_app pre-created there so migration
+0002's guarded CREATE no-ops and the production password wins; owners get
+CREATEROLE since they are not the cluster superuser there), an rtsm-core
+OIDC client in the imported Keycloak realm, `rtsm-api`/`rtsm-web` services
+on the pinned GHCR images (the API migrates at startup — no separate
+rtsm-migrate), the `RTSM_DOMAIN` Caddy route with the network alias, and
+`.env.example` plus README coverage of the edc→rtsm key wiring and the
+compatibility matrix.
