@@ -100,3 +100,16 @@ podman compose -f infra/compose.yaml up -d
 The API migrates the database at startup and serves on `:3002`; the web
 image serves the built SPA on `:5175` behind nginx, proxying `/api/*` to
 the API container.
+
+In a real deployment (no demo seed), create the first system administrator
+with the audited bootstrap:
+
+```bash
+podman compose -f infra/compose.yaml exec api pnpm --filter @rtsm-core/api db:bootstrap-admin
+```
+
+It prints a generated password once (override with `RTSM_ADMIN_USERNAME` /
+`RTSM_ADMIN_EMAIL` / `RTSM_ADMIN_PASSWORD`), attributes the insert to
+`bootstrap-admin` in the audit trail, and does nothing if a system
+administrator already exists — so it is safe to run after SSO users have
+already provisioned themselves.

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx ../../packages/db/src/migrate.ts",
+    "db:bootstrap-admin": "tsx src/scripts/bootstrap-admin.ts",
     "db:seed-demo": "tsx src/scripts/seed-demo.ts"
   },
   "dependencies": {
